@@ -15,7 +15,7 @@ import XML.ParseUtils
 
 %access public
 
-genKVPair : Parser String -> Parser a -> Parser (String, a)
+genKVPair : Parser a -> Parser b -> Parser (a, b)
 genKVPair key value = do
     k <- key
     equals
@@ -31,9 +31,7 @@ keyvalue = do
 
 keyvalue' : String -> Parser a -> Parser a
 keyvalue' key value = do
-    token key
-    equals
-    v <- value <$ space
+    (_,v) <- genKVPair (token key) value
     pure v
 
 comment : Parser String
