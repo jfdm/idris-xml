@@ -123,19 +123,30 @@ instance Eq MetaNode where
   (==) (MetaComment x)     (MetaComment y)     = x == y
   (==) _                   _                   = False
 
+data XMLNode : Type where
+  MkXMLNode : (version : String)
+            -> (encoding : String)
+            -> (standalone : Bool)
+            -> XMLNode
+
+instance Show XMLNode where
+  show (MkXMLNode v enc std) = unwords ["[XML", show v, show enc, show std, "]\n"]
+
+instance Eq XMLNode where
+  (==) (MkXMLNode a b c) (MkXMLNode x y z) = a == x && b == y && c == z
 
 data Prologue : Type where
-  MkPrologue : List MetaNode
+  MkPrologue : XMLNode
+             -> List MetaNode
              -> Maybe DocType
              -> List MetaNode
              -> Prologue
 
 instance Show Prologue where
-  show (MkPrologue b dtd a) = unwords [show b, "\n", show dtd, "\n", show a,"\n"]
+  show (MkPrologue x b dtd a) = unwords [show x, "\n", show b, "\n", show dtd, "\n", show a,"\n"]
 
 instance Eq Prologue where
-  (==) (MkPrologue a b c) (MkPrologue x y z) = a == x && b == y && c == z
-
+  (==) (MkPrologue a b c d) (MkPrologue w x y z) = a == w && b == x && c == y && d == z
 
 -- ---------------------------------------------------------------- [ Document ]
 data Document : Type where

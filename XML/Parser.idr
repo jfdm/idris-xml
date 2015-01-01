@@ -12,8 +12,29 @@ import Lightyear.Strings
 
 import XML.Types
 import XML.ParseUtils
--- rewrite to parse left angle do stuff, otherwise it is content.
+
 %access public
+
+genKVPair : Parser String -> Parser a -> Parser (String, a)
+genKVPair key value = do
+    k <- key
+    equals
+    v <- value <$ space
+    pure (k,v)
+  <?> "KVPair"
+
+keyvalue : Parser (String, String)
+keyvalue = do
+    (k,v) <- genKVPair (word <$ space) (literallyBetween '\"')
+    pure (k, v)
+  <?> "KVPair"
+
+keyvalue' : String -> Parser a -> Parser a
+keyvalue' key value = do
+    token key
+    equals
+    v <- value <$ space
+    pure v
 
 comment : Parser String
 comment = token ("<!--") $!> do
@@ -53,6 +74,21 @@ mutual
 mnode : Parser MetaNode
 mnode = map MetaInstruction instruction <|> map MetaComment comment
 
+xmlnode : Parser XMLNode
+xmlnode = token "<?xml" $!> do
+    vers <- keyvalue' "version" $ literallyBetween '\"'
+    enc  <- opt $ keyvalue' "encoding" $ literallyBetween '\"'
+    alone <- opt $ keyvalue' "standalone" standalone
+    pure $ MkXMLNode vers (fromMaybe "UTF-8" enc) (fromMaybe True alone)
+  where
+    standalone : Parser Bool
+    standalone = do
+           skip $ dquote (string "yes")
+           pure True
+        <|> do
+           skip $ dquote (string "no")
+           pure False
+
 doctype : Parser DocType
 doctype = do
   v <- angles (token "!DOCTYPE" $> word)
@@ -61,12 +97,13 @@ doctype = do
 public
 parseXML : Parser Document
 parseXML = do
+  xnode <- xmlnode
   prologue_before <- many mnode
   dtype <- opt doctype
   prologue_after <- many mnode
   doc <- element
   epilogue <- many mnode
-  let prologue = MkPrologue prologue_before dtype prologue_after
+  let prologue = MkPrologue xnode prologue_before dtype prologue_after
   pure $ MkDoc prologue doc epilogue
 
 -- --------------------------------------------------------------------- [ EOF ]

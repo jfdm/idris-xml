@@ -7,14 +7,12 @@ A Simple XML library for Idris.
 + The Parser only parses simple xml documents.
   + Inline nodes are ignored.
   + Attributes are ignored.
-  + DTDs are local only.
   + CData is ignored.
   + Empty tags are not recognised yet.
-  + Processing instructions are not parsed.
-  + The Prologue can only contain the DocType information
-  + The Epilogue is not taken into account.
   + Name spaces are local only and prefix's are not parsed.
+  + XML node is not intelligent
 + Things I would like to have but not necessarily the time for include:
+  + Soundness guarantees wrt xmlnode
   + Cursor/XPath query functionality
   + XSD validation.
   + QuasiQuotes idiomatic construction of documents within Idris.
