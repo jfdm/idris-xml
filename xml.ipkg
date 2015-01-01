@@ -1,0 +1,8 @@
+package xml
+
+opts = "-p effects -p lightyear"
+
+modules = XML.Types
+--        , XML.Reader
+--        , XML.ParseUtils
+--        , XML.Parser

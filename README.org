@@ -1,0 +1,22 @@
+#+TITLE: Idris XML
+
+A Simple XML library for Idris.
+
++ This library has been inspired by [[http://www.yesodweb.com/book/xml][=xml-conduit=]].
++ This library is not necessarily feature complete and will have missing functionality.
++ The Parser only parses simple xml documents.
+  + Inline nodes are ignored.
+  + Attributes are ignored.
+  + DTDs are local only.
+  + CData is ignored.
+  + Empty tags are not recognised yet.
+  + Processing instructions are not parsed.
+  + The Prologue can only contain the DocType information
+  + The Epilogue is not taken into account.
+  + Name spaces are local only and prefix's are not parsed.
++ Things I would like to have but not necessarily the time for include:
+  + Cursor/XPath query functionality
+  + XSD validation.
+  + QuasiQuotes idiomatic construction of documents within Idris.
+  + XSLT transformation processing.
++ There are most likely things I would like to include but don't knwo that I need to include. If you know about this please consider contributing.
