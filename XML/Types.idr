@@ -110,44 +110,42 @@ instance Eq DocType where
   (==) (MkDocType x xid) (MkDocType y yid) = x == y && xid == yid
 
 -- --------------------------------------------------------------- [ Documents ]
-data Misc : Type where
-  MiscInstruction : Instruction -> Misc
-  MiscComment     : String -> Misc
+data MetaNode : Type where
+  MetaInstruction : Instruction -> MetaNode
+  MetaComment     : String      -> MetaNode
 
-instance Show Misc where
-  show (MiscInstruction i) = show i
-  show (MiscComment     x) = unwords ["[Comment", show x, "]"]
+instance Show MetaNode where
+  show (MetaInstruction i) = show i
+  show (MetaComment     x) = unwords ["[Comment", show x, "]"]
 
-instance Eq Misc where
-  (==) (MiscInstruction x) (MiscInstruction y) = x == y
-  (==) (MiscComment x)     (MiscComment y)     = x == y
+instance Eq MetaNode where
+  (==) (MetaInstruction x) (MetaInstruction y) = x == y
+  (==) (MetaComment x)     (MetaComment y)     = x == y
   (==) _                   _                   = False
 
+
 data Prologue : Type where
-  MkPrologue : (before : List Misc)
-             -> (dtype : Maybe DocType)
-             -> (after : List Misc)
+  MkPrologue : List MetaNode
+             -> Maybe DocType
+             -> List MetaNode
              -> Prologue
 
 instance Show Prologue where
-  show (MkPrologue b dtd a) = unwords [show b,"\n", show dtd, "\n", show a,"\n"]
+  show (MkPrologue b dtd a) = unwords [show b, "\n", show dtd, "\n", show a,"\n"]
 
 instance Eq Prologue where
-  (==) (MkPrologue xb xd xa) (MkPrologue yb yd ya) = xb == yb && xd == yd && xa == ya
+  (==) (MkPrologue a b c) (MkPrologue x y z) = a == x && b == y && c == z
 
 
 -- ---------------------------------------------------------------- [ Document ]
 data Document : Type where
-  MkDoc : (prologue : Prologue)
-        -> (root : Element)
-        -> (epilogue : List Misc)
+  MkDoc : Prologue
+        -> Element
+        -> List MetaNode
         -> Document
 
-MkPureDocument : Element -> Document
-MkPureDocument r = MkDoc (MkPrologue [] Nothing []) r []
-
 instance Show Document where
-  show (MkDoc p r e) = unwords [show p,"\n", show r, "\n", show e,"\n"]
+  show (MkDoc p r e) = unwords [show p,"\n", show r, "\n", show e, "\n"]
 
 instance Eq Document where
   (==) (MkDoc a b c) (MkDoc x y z) = a == x && b == y && c == z

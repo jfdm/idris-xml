@@ -50,6 +50,9 @@ mutual
       angles (char '/' $> string n)
       pure $ MkElement (MkQName n Nothing Nothing) Nothing children
 
+mnode : Parser MetaNode
+mnode = map MetaInstruction instruction <|> map MetaComment comment
+
 doctype : Parser DocType
 doctype = do
   v <- angles (token "!DOCTYPE" $> word)
@@ -58,8 +61,12 @@ doctype = do
 public
 parseXML : Parser Document
 parseXML = do
+  prologue_before <- many mnode
   dtype <- opt doctype
+  prologue_after <- many mnode
   doc <- element
-  pure $ MkDoc (MkPrologue Nil dtype Nil) doc Nil
+  epilogue <- many mnode
+  let prologue = MkPrologue prologue_before dtype prologue_after
+  pure $ MkDoc prologue doc epilogue
 
 -- --------------------------------------------------------------------- [ EOF ]
