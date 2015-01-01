@@ -49,7 +49,7 @@ instance Eq Instruction where
 mutual
   data Element : Type where
     MkElement : (name : QName)
-              -> (attrs : List (QName, String))
+              -> (attrs : Maybe (List (QName, String)))
               -> (nodes : List Node)
               -> Element
 
