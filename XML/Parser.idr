@@ -85,7 +85,7 @@ mutual
   element = do
       (n, qn, as) <- elemStart <$ space
       token ">" $!> do
-        cs <- some tNode
+        cs <- some node
         elemEnd $ trim n
         pure $ MkElement qn as cs
     <?> "Element"
