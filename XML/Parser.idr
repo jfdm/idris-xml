@@ -13,7 +13,7 @@ import Lightyear.Strings
 import XML.Types
 import XML.ParseUtils
 
-%access public
+%access private
 
 comment : Parser String
 comment = token ("<!--") >! do
@@ -37,7 +37,7 @@ cNode = map NodeComment comment <?> "Comment Node"
 tNode : Parser Node
 tNode = do
     txt <- some (xmlWord <$ space)
-    pure $ NodeContent $ unwords txt
+    pure $ NodeText $ unwords txt
   <?> "Text Node"
 
 attr : Parser $ (QName, String)
@@ -51,7 +51,7 @@ cData : Parser Node
 cData = do
     token "<![CDATA[" >! do
       txt <- manyTill (anyChar) (token "]]>")
-      pure $ NodeContent $ pack txt
+      pure $ NodeText $ pack txt
   <?> "CData"
 
 elemStart : Parser (String, QName, Maybe (List (QName, String)))
@@ -74,6 +74,7 @@ emptyNode = do
   <?> "Empty Node"
 
 mutual
+  public
   node : Parser Node
   node = iNode <|> cNode <|> cData <|> emptyNode <|> eNode <|> tNode <?> "Nodes"
 
@@ -89,9 +90,11 @@ mutual
         pure $ MkElement qn as cs
     <?> "Element"
 
+public
 mnode : Parser MetaNode
 mnode = map MetaInstruction instruction <|> map MetaComment comment
 
+public
 xmlnode : Parser XMLNode
 xmlnode = token "<?xml" $!> do
     vers <- keyvalue' "version" $ literallyBetween '\"'
@@ -108,6 +111,7 @@ xmlnode = token "<?xml" $!> do
            skip $ dquote (string "no")
            pure False
 
+public
 doctype : Parser DocType
 doctype = do
   v <- angles (token "!DOCTYPE" $> word)

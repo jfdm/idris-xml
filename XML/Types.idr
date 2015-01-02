@@ -66,20 +66,20 @@ mutual
   data Node : Type where
     NodeElement : Element -> Node
     NodeInstruction : Instruction -> Node
-    NodeContent : String -> Node
+    NodeText : String -> Node
     NodeComment : String -> Node
 
   instance Show Node where
     show (NodeElement e)     = show e
     show (NodeInstruction i) = show i
-    show (NodeContent c)     = unwords ["[Text", show c, "]\n"]
+    show (NodeText c)     = unwords ["[Text", show c, "]\n"]
     show (NodeComment txt)   = unwords ["[Comment", show txt, "]\n"]
 
   instance Eq Node where
     (==) (NodeElement x)     (NodeElement y)     = x == y
     (==) (NodeInstruction x) (NodeInstruction y) = x == y
-    (==) (NodeContent x)     (NodeContent y)     = x == y
-    (==) (NodeComment x)     (NodeContent y)     = x == y
+    (==) (NodeText x)        (NodeText y)        = x == y
+    (==) (NodeComment x)     (NodeComment y)     = x == y
     (==) _                   _                   = False
 
 
