@@ -1,7 +1,5 @@
 #+TITLE: Idris XML
 
-*There is a bug* and rhe parser has stopped recognising elements properly. I do not know that has changed. Fixes may come later.
-
 A Simple XML library for Idris.
 
 + This library has been inspired by [[http://www.yesodweb.com/book/xml][=xml-conduit=]].

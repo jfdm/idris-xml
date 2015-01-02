@@ -11,14 +11,78 @@ module XML.ParseUtils
 import Lightyear
 import Lightyear.Strings
 
+%access public
+
+-- -------------------------------------------------------------- [ Characters ]
 eol : Parser ()
-eol = char '\n'
+eol = char '\n' <?> "EOL"
 
 anyChar : Parser Char
-anyChar = satisfy (const True)
+anyChar = satisfy (const True) <?> "Any Char"
 
 word : Parser String
 word = map pack (some $ satisfy isAlphaNum) <?> "Word"
+
+entities : Parser Char
+entities = do
+    char '&'
+    ty <- word
+    char ';'
+    case ty of
+      "quot"    => pure '"'
+      "amp"     => pure '&'
+      "apos"    => pure '\''
+      "lt"      => pure '<'
+      "gt"      => pure '>'
+      otherwise => satisfy (const False)
+  <?> "entities"
+
+reservedChar : Parser Char
+reservedChar = do
+    c <- satisfy (const True)
+    case c of
+      '"'       => satisfy (const False)
+      '&'       => satisfy (const False)
+      '\''      => satisfy (const False)
+      '<'       => satisfy (const False)
+      '>'       => satisfy (const False)
+      otherwise => satisfy (const False)
+  <?> "reserved characters"
+
+allowedChar : Parser Char
+allowedChar = reservedChar <|> satisfy isAlphaNum <?> "Reserved Char"
+
+private
+urlChar : Parser Char
+urlChar = do
+  c <- satisfy (const True)
+  case c of
+    '\\'      => pure '\\'
+    '/'       => pure '/'
+    '.'       => pure '.'
+    ':'       => pure ':'
+    '#'       => pure '#'
+    '='       => pure '='
+    '?'       => pure '?'
+    '-'       => pure '-'
+    otherwise => satisfy (const False)
+
+private
+pathChar : Parser Char
+pathChar = urlChar <|> satisfy isAlphaNum <?> "Path Char"
+
+||| Parse URIs
+url : Parser String
+url = map pack (some pathChar) <?> "URL"
+
+
+||| Parse XML Words
+xmlWord : Parser String
+xmlWord = map pack (some entities)
+      <|> map pack (some allowedChar)
+      <|> word <?> "Valid XML words"
+
+-- ------------------------------------------------------------- [ Combinators ]
 
 literallyBetween : Char -> Parser String
 literallyBetween c = map pack $ between (char c) (char c) (some (satisfy (/= c)))
@@ -30,5 +94,26 @@ manyTill p end = scan
   where
     scan = do { end; return List.Nil } <|>
            do { x <- p; xs <- scan; return (x::xs)}
+
+-- ---------------------------------------------------------------- [ KV Pairs ]
+genKVPair : Parser a -> Parser b -> Parser (a, b)
+genKVPair key value = do
+    k <- key
+    equals
+    v <- value <$ space
+    pure (k,v)
+  <?> "KV Pair Impl"
+
+keyvalue : Parser (String, String)
+keyvalue = do
+    (k,v) <- genKVPair (word <$ space) (literallyBetween '\"')
+    pure (k, v)
+  <?> "String KV Pair"
+
+keyvalue' : String -> Parser a -> Parser a
+keyvalue' key value = do
+    (_,v) <- genKVPair (token key) value
+    pure v
+  <?> "Value from Known Key"
 
 -- --------------------------------------------------------------------- [ EOF ]

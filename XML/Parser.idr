@@ -15,89 +15,79 @@ import XML.ParseUtils
 
 %access public
 
-genKVPair : Parser a -> Parser b -> Parser (a, b)
-genKVPair key value = do
-    k <- key
-    equals
-    v <- value <$ space
-    pure (k,v)
-  <?> "KVPair"
-
-keyvalue : Parser (String, String)
-keyvalue = do
-    (k,v) <- genKVPair (word <$ space) (literallyBetween '\"')
-    pure (k, v)
-  <?> "KVPair"
-
-keyvalue' : String -> Parser a -> Parser a
-keyvalue' key value = do
-    (_,v) <- genKVPair (token key) value
-    pure v
-
 comment : Parser String
 comment = token ("<!--") >! do
     cs <- map pack $ manyTill (anyChar) (space $> token "-->")
     pure $ cs
+  <?> "Comment"
 
 instruction : Parser Instruction
 instruction = token "<?" >! do
     itarget <- word <$ space
     idata  <- map pack $ manyTill (anyChar) (token "?>")
     pure $ MkInstruction itarget idata
+  <?> "Instruction"
 
 iNode : Parser Node
-iNode = map NodeInstruction instruction
+iNode = map NodeInstruction instruction <?> "Instruction Node"
 
 cNode : Parser Node
-cNode = map NodeComment comment
+cNode = map NodeComment comment <?> "Comment Node"
 
 tNode : Parser Node
 tNode = do
-  txt <- some (anyChar <$ space)
-  pure $ NodeContent $ pack txt
+    txt <- some (xmlWord <$ space)
+    pure $ NodeContent $ unwords txt
+  <?> "Text Node"
 
 attr : Parser $ (QName, String)
 attr = do
-  (k,v) <- genKVPair (word <$ space) (literallyBetween '"')
-  space
-  pure (MkQName k Nothing Nothing, v)
+    (k,v) <- genKVPair (word <$ space) (dquote url)
+    space
+    pure (MkQName k Nothing Nothing, v)
+  <?> "Node Attributes"
 
 cData : Parser Node
 cData = do
-  token "<![CDATA[" >! do
-    txt <- manyTill (anyChar) (token "]]>")
-    pure $ NodeContent $ pack txt
+    token "<![CDATA[" >! do
+      txt <- manyTill (anyChar) (token "]]>")
+      pure $ NodeContent $ pack txt
+  <?> "CData"
 
 elemStart : Parser (String, QName, Maybe (List (QName, String)))
 elemStart = do
-  token "<"
-  n <- word <$ space
-  as <- opt $ some (attr)
-  pure (n, MkQName n Nothing Nothing, as)
+    token "<"
+    n <- word <$ space
+    as <- opt $ some (attr)
+    pure (n, MkQName n Nothing Nothing, as)
+  <?> "Start Tag"
 
 elemEnd : String -> Parser ()
-elemEnd s = angles (token "/" $> string s)
+elemEnd s = angles (token "/" $!> token s) <?> "End Tag"
 
 emptyNode : Parser Node
 emptyNode = do
-  (_, qn, as) <- elemStart <$ space
-  token "/" >! do
-    token ">"
-    pure $ NodeElement $ MkElement qn as Nil
+    (_, qn, as) <- elemStart <$ space
+    token "/" >! do
+      token ">"
+      pure $ NodeElement $ MkElement qn as Nil
+  <?> "Empty Node"
 
 mutual
   node : Parser Node
-  node = iNode <|> cNode <|> cData <|> emptyNode <|> eNode <|> tNode
+  node = iNode <|> cNode <|> cData <|> emptyNode <|> eNode <|> tNode <?> "Nodes"
 
   eNode : Parser Node
-  eNode = map NodeElement element
+  eNode = map NodeElement element <?> "Element Node"
 
   element : Parser Element
   element = do
-    (n, qn, as) <- elemStart <$ space
-    token ">" >! do
-      cs <- some tNode <$ (elemEnd n)
-      pure $ MkElement qn as cs
+      (n, qn, as) <- elemStart <$ space
+      token ">" $!> do
+        cs <- some tNode
+        elemEnd $ trim n
+        pure $ MkElement qn as cs
+    <?> "Element"
 
 mnode : Parser MetaNode
 mnode = map MetaInstruction instruction <|> map MetaComment comment
