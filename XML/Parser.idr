@@ -35,12 +35,12 @@ keyvalue' key value = do
     pure v
 
 comment : Parser String
-comment = token ("<!--") $!> do
-    cs <- map pack $ manyTill (anyChar) (token "-->")
+comment = token ("<!--") >! do
+    cs <- map pack $ manyTill (anyChar) (space $> token "-->")
     pure $ cs
 
 instruction : Parser Instruction
-instruction = token "<?" $!> do
+instruction = token "<?" >! do
     itarget <- word <$ space
     idata  <- map pack $ manyTill (anyChar) (token "?>")
     pure $ MkInstruction itarget idata
@@ -59,34 +59,44 @@ tNode = do
 attr : Parser $ (QName, String)
 attr = do
   (k,v) <- genKVPair (word <$ space) (literallyBetween '"')
+  space
   pure (MkQName k Nothing Nothing, v)
+
+cData : Parser Node
+cData = do
+  token "<![CDATA[" >! do
+    txt <- manyTill (anyChar) (token "]]>")
+    pure $ NodeContent $ pack txt
 
 elemStart : Parser (String, QName, Maybe (List (QName, String)))
 elemStart = do
   token "<"
   n <- word <$ space
-  as <- opt $ some attr
+  as <- opt $ some (attr)
   pure (n, MkQName n Nothing Nothing, as)
 
-eNode : Parser Node
-eNode = do
+elemEnd : String -> Parser ()
+elemEnd s = angles (token "/" $> string s)
+
+emptyNode : Parser Node
+emptyNode = do
   (_, qn, as) <- elemStart <$ space
-  token "/" $!> do
-    char '>'
+  token "/" >! do
+    token ">"
     pure $ NodeElement $ MkElement qn as Nil
 
 mutual
   node : Parser Node
-  node = iNode <|> cNode <|> eNode
-       <|> map NodeElement element
-       <|> tNode
+  node = iNode <|> cNode <|> cData <|> emptyNode <|> eNode <|> tNode
+
+  eNode : Parser Node
+  eNode = map NodeElement element
 
   element : Parser Element
   element = do
-    (n,qn, as) <- elemStart <$ space
-    char '>' $!> do
-      cs <- some node
-      angles (char '/' $> string n)
+    (n, qn, as) <- elemStart <$ space
+    token ">" >! do
+      cs <- some tNode <$ (elemEnd n)
       pure $ MkElement qn as cs
 
 mnode : Parser MetaNode

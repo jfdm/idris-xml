@@ -1,16 +1,14 @@
 #+TITLE: Idris XML
 
+*There is a bug* and rhe parser has stopped recognising elements properly. I do not know that has changed. Fixes may come later.
+
 A Simple XML library for Idris.
 
 + This library has been inspired by [[http://www.yesodweb.com/book/xml][=xml-conduit=]].
 + This library is not necessarily feature complete and will have missing functionality.
 + The Parser only parses simple xml documents.
-  + Inline nodes are ignored.
-  + Attributes are ignored.
-  + CData is ignored.
-  + Empty tags are not recognised yet.
   + Name spaces are local only and prefix's are not parsed.
-  + XML node is not intelligent
+  + The XML declaration is not intelligent and checks for root element name is not performed.
 + Things I would like to have but not necessarily the time for include:
   + Soundness guarantees wrt xmlnode
   + Cursor/XPath query functionality
