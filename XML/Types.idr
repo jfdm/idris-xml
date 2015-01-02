@@ -34,7 +34,7 @@ instance Eq QName where
   (==) (MkQName x xs _) (MkQName y ys _) = x == y && xs == ys
 
 -- ------------------------------------------------------------ [ Instructions ]
--- <?target data?>
+-- <?target data?> SHould data be kv list?
 data Instruction : Type where
   MkInstruction : (iTarget : String)
                 -> (iData : String)

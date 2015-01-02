@@ -56,18 +56,38 @@ tNode = do
   txt <- some (anyChar <$ space)
   pure $ NodeContent $ pack txt
 
+attr : Parser $ (QName, String)
+attr = do
+  (k,v) <- genKVPair (word <$ space) (literallyBetween '"')
+  pure (MkQName k Nothing Nothing, v)
+
+elemStart : Parser (String, QName, Maybe (List (QName, String)))
+elemStart = do
+  token "<"
+  n <- word <$ space
+  as <- opt $ some attr
+  pure (n, MkQName n Nothing Nothing, as)
+
+eNode : Parser Node
+eNode = do
+  (_, qn, as) <- elemStart <$ space
+  token "/" $!> do
+    char '>'
+    pure $ NodeElement $ MkElement qn as Nil
+
 mutual
   node : Parser Node
-  node = iNode <|> cNode <|> map NodeElement element
+  node = iNode <|> cNode <|> eNode
+       <|> map NodeElement element
        <|> tNode
 
   element : Parser Element
   element = do
-    n <- char '<' $> word
-    token ">" $!> do
-      children <- some node
+    (n,qn, as) <- elemStart <$ space
+    char '>' $!> do
+      cs <- some node
       angles (char '/' $> string n)
-      pure $ MkElement (MkQName n Nothing Nothing) Nothing children
+      pure $ MkElement qn as cs
 
 mnode : Parser MetaNode
 mnode = map MetaInstruction instruction <|> map MetaComment comment
@@ -77,6 +97,7 @@ xmlnode = token "<?xml" $!> do
     vers <- keyvalue' "version" $ literallyBetween '\"'
     enc  <- opt $ keyvalue' "encoding" $ literallyBetween '\"'
     alone <- opt $ keyvalue' "standalone" standalone
+    token "?>"
     pure $ MkXMLNode vers (fromMaybe "UTF-8" enc) (fromMaybe True alone)
   where
     standalone : Parser Bool
@@ -99,6 +120,7 @@ parseXML = do
   prologue_before <- many mnode
   dtype <- opt doctype
   prologue_after <- many mnode
+  -- Add check if docttype exists for name of root element
   doc <- element
   epilogue <- many mnode
   let prologue = MkPrologue xnode prologue_before dtype prologue_after
