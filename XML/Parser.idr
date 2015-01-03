@@ -54,12 +54,12 @@ cData = do
       pure $ NodeText $ pack txt
   <?> "CData"
 
-elemStart : Parser (String, QName, Maybe (List (QName, String)))
+elemStart : Parser (String, QName, (List (QName, String)))
 elemStart = do
     token "<"
     n <- word <$ space
     as <- opt $ some (attr)
-    pure (n, MkQName n Nothing Nothing, as)
+    pure (n, MkQName n Nothing Nothing, fromMaybe Nil as)
   <?> "Start Tag"
 
 elemEnd : String -> Parser ()

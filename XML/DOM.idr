@@ -119,10 +119,10 @@ class XMLNode a where
   hasNodes n = isCons $ getNodes n
 
   ||| Add child to element
-  appendChild   : Node -> a -> a
+  appendChild : Node -> a -> a
 
   ||| Remove Child
-  removeChild   : Node -> a -> a
+  removeChild : Node -> a -> a
 
   ||| Get node name
   getNodeName : a -> String
