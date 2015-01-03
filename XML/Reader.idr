@@ -10,6 +10,7 @@ import Lightyear.Strings
 
 import Effects
 import Effect.File
+import Effect.Exception
 
 import XML.Types
 import XML.Parser
@@ -25,14 +26,14 @@ readFile = readAcc ""
                      else pure acc
 
 public
-readXML : String -> { [FILE_IO ()] } Eff (Either String Document)
-readXML f = do
+readXMLFile : String -> { [FILE_IO (), EXCEPTION String] } Eff Document
+readXMLFile f = do
     case !(open f Read) of
       True => do
         src <- readFile
         close
         case parse parseXML src of
-          Left err  => pure $ Left err
-          Right res => pure $ Right res
-      False => pure $ Left "Error"
+          Left err  => raise err
+          Right res => pure $ res
+      False => raise "Error"
 -- --------------------------------------------------------------------- [ EOF ]
