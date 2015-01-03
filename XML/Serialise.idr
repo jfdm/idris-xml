@@ -17,12 +17,14 @@ import XML.Reader
 
 class Convertable a where
   toElement    : a -> Element
-  fromElement  : Element  -> a
+  fromElement  : Element -> Maybe a
 
 readDocument : Convertable a => String -> {[FILE_IO (), EXCEPTION String]} Eff a
 readDocument fname = do
    raw_doc <- readXMLFile fname
-   pure $ fromElement (root raw_doc)
+   case fromElement (root raw_doc) of
+     Just e => pure e
+     Nothing => raise "Invalid XML"
 
 
 -- --------------------------------------------------------------------- [ EOF ]
