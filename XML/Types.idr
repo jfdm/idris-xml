@@ -9,14 +9,11 @@ module XML.Types
 
 -- ------------------------------------------------------------------ [ QNames ]
 
-data QName : Type where
+record QName : Type where
   MkQName : (name : String)
           -> (nspace : Maybe String)
           -> (nprefix : Maybe String)
           -> QName
-
-MkSQName : String -> QName
-MkSQName n = MkQName n Nothing Nothing
 
 instance Show QName where
   show (MkQName n ns pre) = unwords ["[", showPre, n, showNS, "]\n"]
@@ -35,7 +32,7 @@ instance Eq QName where
 
 -- ------------------------------------------------------------ [ Instructions ]
 -- <?target data?> SHould data be kv list?
-data Instruction : Type where
+record Instruction : Type where
   MkInstruction : (iTarget : String)
                 -> (iData : String)
                 -> Instruction
@@ -47,9 +44,9 @@ instance Eq Instruction where
   (==) (MkInstruction x xs) (MkInstruction y ys) = x == y && xs == ys
 
 mutual
-  data Element : Type where
-    MkElement : (name : QName)
-              -> (attrs : Maybe (List (QName, String)))
+  record Element : Type where
+    MkElement : (tag : QName)
+              -> (attrs : List (QName, String))
               -> (nodes : List Node)
               -> Element
 
@@ -67,12 +64,14 @@ mutual
     NodeElement : Element -> Node
     NodeInstruction : Instruction -> Node
     NodeText : String -> Node
+    NodeCData : String -> Node
     NodeComment : String -> Node
 
   instance Show Node where
     show (NodeElement e)     = show e
     show (NodeInstruction i) = show i
-    show (NodeText c)     = unwords ["[Text", show c, "]\n"]
+    show (NodeText c)        = unwords ["[Text", show c, "]\n"]
+    show (NodeCData c)       = unwords ["[CData", show c, "]\n"]
     show (NodeComment txt)   = unwords ["[Comment", show txt, "]\n"]
 
   instance Eq Node where
@@ -86,8 +85,8 @@ mutual
 -- --------------------------------------------------------------- [ Doc Types ]
 
 data ExternalID : Type where
-  SystemID : String -> ExternalID
-  PublicID : String -> String -> ExternalID
+  SystemID : (ident : String) -> ExternalID
+  PublicID : (ident : String) -> (ident_sys : String) -> ExternalID
 
 instance Show ExternalID where
   show (SystemID loc)       = unwords ["SYSTEM", show loc]
@@ -149,10 +148,10 @@ instance Eq Prologue where
   (==) (MkPrologue a b c d) (MkPrologue w x y z) = a == w && b == x && c == y && d == z
 
 -- ---------------------------------------------------------------- [ Document ]
-data Document : Type where
-  MkDoc : Prologue
-        -> Element
-        -> List MetaNode
+record Document : Type where
+  MkDoc : (prologue : Prologue)
+        -> (root : Element)
+        -> (epilogue : List MetaNode)
         -> Document
 
 instance Show Document where
