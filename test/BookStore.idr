@@ -6,27 +6,23 @@ import XML.XPath
 
 -- % Make attributes work with nodes
 bstore : Document
-bstore = setRoot (appendChild rogElem $ appendChild book2 $ appendChild book1 $ createSimpleElement "bookstore")
+bstore = setRoot (createSimpleElement "bookstore" <++> rogElem <++> book2 <++> book1)
                  (createEmptyDoc)
   where
     rogElem : Node
-    rogElem = appendChild (createTextNode "123") (createElementNode "isbn")
+    rogElem = "isbn" <+=> "123"
 
     book1 : Node
     book1 =  NodeElement $ MkElement (createQName "book") Nil
-               [appendChild (createTextNode "Harry Potter")
-                            (createElementNode "title"),
-                appendChild (createTextNode "29.99")
-                            (createElementNode "price")
+               [ "title" <+=>  "Harry Potter",
+                 "price" <+=> "29.99"
                ]
+
     book2 : Node
     book2 =  NodeElement $ MkElement (createQName "book") Nil
-               [appendChild (createTextNode "Learning XML")
-                            (createElementNode "title"),
-                appendChild (createTextNode "39.35")
-                            (createElementNode "price"),
-                appendChild (createTextNode "123456")
-                            (createElementNode "isbn")
+               [ "title" <+=>  "Learning XML",
+                 "price" <+=> "39.35",
+                 "isbn"  <+=> "123456"
                ]
 
 temp : XPath QUERY

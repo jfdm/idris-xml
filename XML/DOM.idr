@@ -111,6 +111,10 @@ getAttrValue : (QName, String) -> String
 getAttrValue (k,v) = v
 
 -- ------------------------------------------------------------- [ Element Ops ]
+infixl 2 <++>
+infixl 2 <-->
+infixl 2 <=>
+infixl 2 <+=>
 
 class XMLNode a where
   ||| Get the attributes of the node
@@ -130,8 +134,21 @@ class XMLNode a where
   ||| Add child to element
   appendChild : Node -> a -> a
 
+  (<++>) : a -> Node -> a
+  (<++>) p c = appendChild c p
+
   ||| Remove Child
   removeChild : Node -> a -> a
+  (<-->) : a -> Node -> a
+  (<-->) p c = removeChild c p
+
+  ||| Set Value
+  addText : a -> String -> a
+  (<=>) : a -> String -> a
+  (<=>) = addText
+
+  ||| Create and Set
+  (<+=>) : String -> String -> a
 
   ||| Get node name
   getNodeName : a -> String
@@ -161,6 +178,9 @@ instance XMLNode Element where
   getTagNS     e = nspace (tag e)
   getTagPrefix e = nprefix (tag e)
   getValue     e = Nothing
+
+  addText e s = e <++> (createTextNode s)
+  (<+=>) k v  = (createSimpleElement k) <=> v
 
 ||| Get value for a given attribute
 getAttribute : String -> Element -> Maybe String
@@ -225,6 +245,10 @@ nodeGetTagNS : Node -> Maybe String
 nodeGetTagNS (NodeElement e) = getTagNS e
 nodeGetTagNS _               = Nothing
 
+nodeAddText : Node -> String -> Node
+nodeAddText (NodeElement e) str = NodeElement $ addText e str
+nodeAddText n               _   = n
+
 instance XMLNode Node where
   getAttributes = nodeGetAttrs
   getNodes      = nodeGetNodes
@@ -238,6 +262,9 @@ instance XMLNode Node where
   getTagName   = nodeGetTagName
   getTagNS     = nodeGetTagNS
   getTagPrefix = nodeGetTagPrefix
+
+  addText = nodeAddText
+  (<+=>) k v  = (createElementNode k) <=> v
 
 getElement : Node -> Maybe Element
 getElement (NodeElement e) = Just e
