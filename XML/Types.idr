@@ -30,57 +30,26 @@ instance Show QName where
 instance Eq QName where
   (==) (MkQName x xs _) (MkQName y ys _) = x == y && xs == ys
 
+-- ---------------------------------------------------------------- [ XML Info ]
+data XMLInfo : Type where
+  MkXMLInfo : (version : String) -> (encoding : String) -> (standalone : Bool) -> XMLInfo
+
+instance Show XMLInfo where
+  show (MkXMLInfo v enc std) = unwords ["[XML", show v, show enc, show std, "]\n"]
+
+instance Eq XMLInfo where
+  (==) (MkXMLInfo a b c) (MkXMLInfo x y z) = a == x && b == y && c == z
+
 -- ------------------------------------------------------------ [ Instructions ]
 -- <?target data?> SHould data be kv list?
 record Instruction : Type where
-  MkInstruction : (iTarget : String)
-                -> (iData : String)
-                -> Instruction
+  MkInstruction : (target : String) -> (kvpairs : List (String, String)) -> Instruction
 
 instance Show Instruction where
-  show (MkInstruction t d) = unwords ["[?", t , d,"?]\n"]
+  show (MkInstruction t d) = unwords ["[?", t , show d ,"?]\n"]
 
 instance Eq Instruction where
   (==) (MkInstruction x xs) (MkInstruction y ys) = x == y && xs == ys
-
-mutual
-  record Element : Type where
-    MkElement : (tag : QName)
-              -> (attrs : List (QName, String))
-              -> (nodes : List Node)
-              -> Element
-
-  instance Show Element where
-    show (MkElement n as ns) = unwords ["[",show n, show as, show ns,"]\n"]
-
-  %assert_total
-  eqElement : Element -> Element -> Bool
-  eqElement (MkElement x xs xxs) (MkElement y ys yys) = x == y && xs == ys && xxs == yys
-
-  instance Eq Element where
-    (==) x y = eqElement x y
-
-  data Node : Type where
-    NodeElement : Element -> Node
-    NodeInstruction : Instruction -> Node
-    NodeText : String -> Node
-    NodeCData : String -> Node
-    NodeComment : String -> Node
-
-  instance Show Node where
-    show (NodeElement e)     = show e
-    show (NodeInstruction i) = show i
-    show (NodeText c)        = unwords ["[Text", show c, "]\n"]
-    show (NodeCData c)       = unwords ["[CData", show c, "]\n"]
-    show (NodeComment txt)   = unwords ["[Comment", show txt, "]\n"]
-
-  instance Eq Node where
-    (==) (NodeElement x)     (NodeElement y)     = x == y
-    (==) (NodeInstruction x) (NodeInstruction y) = x == y
-    (==) (NodeText x)        (NodeText y)        = x == y
-    (==) (NodeComment x)     (NodeComment y)     = x == y
-    (==) _                   _                   = False
-
 
 -- --------------------------------------------------------------- [ Doc Types ]
 
@@ -108,55 +77,48 @@ instance Show DocType where
 instance Eq DocType where
   (==) (MkDocType x xid) (MkDocType y yid) = x == y && xid == yid
 
--- --------------------------------------------------------------- [ Documents ]
-data MetaNode : Type where
-  MetaInstruction : Instruction -> MetaNode
-  MetaComment     : String      -> MetaNode
+-- ------------------------------------------------------------------- [ Nodes ]
 
-instance Show MetaNode where
-  show (MetaInstruction i) = show i
-  show (MetaComment     x) = unwords ["[Comment", show x, "]"]
+data NodeTy = DOCUMENT | ELEMENT | TEXT | CDATA | INSTRUCTION | COMMENT
 
-instance Eq MetaNode where
-  (==) (MetaInstruction x) (MetaInstruction y) = x == y
-  (==) (MetaComment x)     (MetaComment y)     = x == y
-  (==) _                   _                   = False
+||| We are not going to recognise processing instructions.
+data ValidNode : NodeTy -> Type where
+  ValidElem  : ValidNode ELEMENT
+  ValidCData : ValidNode CDATA
+  ValidText  : ValidNode TEXT
+  ValidDoc   : ValidNode COMMENT
 
-data XMLNode : Type where
-  MkXMLNode : (version : String)
-            -> (encoding : String)
-            -> (standalone : Bool)
-            -> XMLNode
 
-instance Show XMLNode where
-  show (MkXMLNode v enc std) = unwords ["[XML", show v, show enc, show std, "]\n"]
+mutual
+  data NodeList : Type where
+    Nil : NodeList
+    (::) : (n : Document a) -> NodeList -> {auto prf : ValidNode a} -> NodeList
 
-instance Eq XMLNode where
-  (==) (MkXMLNode a b c) (MkXMLNode x y z) = a == x && b == y && c == z
 
-data Prologue : Type where
-  MkPrologue : XMLNode
-             -> List MetaNode
-             -> Maybe DocType
-             -> List MetaNode
-             -> Prologue
+  data Document : NodeTy -> Type where
+    MkDocument : XMLInfo
+               -> Maybe DocType
+               -> List Instruction
+               -> Document COMMENT
+               -> Document ELEMENT
+               -> Document DOCUMENT
+    Element : QName
+            -> List (QName, String)
+            -> NodeList
+            -> Document ELEMENT
+    Comment : String -> Document COMMENT
+    Text : String -> Document TEXT
+    CData : String -> Document CDATA
 
-instance Show Prologue where
-  show (MkPrologue x b dtd a) = unwords [show x, "\n", show b, "\n", show dtd, "\n", show a,"\n"]
+  instance Show NodeList where
+    show Nil = "[]"
+    show ((::) x xs) = show x ++ show xs
 
-instance Eq Prologue where
-  (==) (MkPrologue a b c d) (MkPrologue w x y z) = a == w && b == x && c == y && d == z
+  instance Show (Document x) where
+    show (MkDocument info dtype ins doc es) = unwords ["[Document ", show info, show dtype, show ins, show doc, show es,"]\n"]
+    show (Element naam as ns) = unwords ["[Element ", show naam, show as, show ns, "]\n"]
+    show (Comment str) = unwords ["[Comment ", show str, "]\n"]
+    show (Text txt) = unwords ["[Text ", show txt, "]\n"]
+    show (CData txt) =  unwords ["[CData ", show txt, "]\n"]
 
--- ---------------------------------------------------------------- [ Document ]
-record Document : Type where
-  MkDoc : (prologue : Prologue)
-        -> (root : Element)
-        -> (epilogue : List MetaNode)
-        -> Document
-
-instance Show Document where
-  show (MkDoc p r e) = unwords [show p,"\n", show r, "\n", show e, "\n"]
-
-instance Eq Document where
-  (==) (MkDoc a b c) (MkDoc x y z) = a == x && b == y && c == z
 -- --------------------------------------------------------------------- [ EOF ]

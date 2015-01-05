@@ -24,20 +24,18 @@ comment = token ("<!--") >! do
 instruction : Parser Instruction
 instruction = token "<?" >! do
     itarget <- word <$ space
-    idata  <- map pack $ manyTill (anyChar) (token "?>")
+    idata  <- some $ genKVPair (word <$ space) (dquote url)
+    token "?>"
     pure $ MkInstruction itarget idata
   <?> "Instruction"
 
-iNode : Parser Node
-iNode = map NodeInstruction instruction <?> "Instruction Node"
+cNode : Parser $ Document COMMENT
+cNode = map Comment comment <?> "Comment Node"
 
-cNode : Parser Node
-cNode = map NodeComment comment <?> "Comment Node"
-
-tNode : Parser Node
+tNode : Parser $ Document TEXT
 tNode = do
     txt <- some (xmlWord <$ space)
-    pure $ NodeText $ unwords txt
+    pure $ Text $ unwords txt
   <?> "Text Node"
 
 attr : Parser $ (QName, String)
@@ -47,11 +45,11 @@ attr = do
     pure (MkQName k Nothing Nothing, v)
   <?> "Node Attributes"
 
-cData : Parser Node
+cData : Parser $ Document CDATA
 cData = do
     token "<![CDATA[" >! do
       txt <- manyTill (anyChar) (token "]]>")
-      pure $ NodeText $ pack txt
+      pure $ CData $ pack txt
   <?> "CData"
 
 elemStart : Parser (String, QName, (List (QName, String)))
@@ -65,43 +63,36 @@ elemStart = do
 elemEnd : String -> Parser ()
 elemEnd s = angles (token "/" $!> token s) <?> "End Tag"
 
-emptyNode : Parser Node
+emptyNode : Parser $ Document ELEMENT
 emptyNode = do
     (_, qn, as) <- elemStart <$ space
     token "/" >! do
       token ">"
-      pure $ NodeElement $ MkElement qn as Nil
+      pure $ Element qn as Nil
   <?> "Empty Node"
 
 mutual
   public
-  node : Parser Node
-  node = iNode <|> cNode <|> cData <|> emptyNode <|> eNode <|> tNode <?> "Nodes"
+  node : {a : NodeTy} -> Parser $ Document ?what
+  node = cNode <|> cData <|> emptyNode <|> element <|> tNode <?> "Nodes"
 
-  eNode : Parser Node
-  eNode = map NodeElement element <?> "Element Node"
-
-  element : Parser Element
+  element : Parser $ Document ELEMENT
   element = do
       (n, qn, as) <- elemStart <$ space
       token ">" $!> do
         cs <- some node
         elemEnd $ trim n
-        pure $ MkElement qn as cs
+        pure $ Element qn as cs
     <?> "Element"
 
 public
-mnode : Parser MetaNode
-mnode = map MetaInstruction instruction <|> map MetaComment comment
-
-public
-xmlnode : Parser XMLNode
-xmlnode = token "<?xml" $!> do
+xmlinfo : Parser XMLInfo
+xmlinfo = token "<?xml" $!> do
     vers <- keyvalue' "version" $ literallyBetween '\"'
     enc  <- opt $ keyvalue' "encoding" $ literallyBetween '\"'
     alone <- opt $ keyvalue' "standalone" standalone
     token "?>"
-    pure $ MkXMLNode vers (fromMaybe "UTF-8" enc) (fromMaybe True alone)
+    pure $ MkXMLInfo vers (fromMaybe "UTF-8" enc) (fromMaybe True alone)
   where
     standalone : Parser Bool
     standalone = do
@@ -118,16 +109,13 @@ doctype = do
   pure $ MkDocType v Nothing
 
 public
-parseXML : Parser Document
+parseXML : Parser $ Document DOCUMENT
 parseXML = do
-  xnode <- xmlnode
-  prologue_before <- many mnode
+  info <- xmlinfo
   dtype <- opt doctype
-  prologue_after <- many mnode
-  -- Add check if docttype exists for name of root element
-  doc <- element
-  epilogue <- many mnode
-  let prologue = MkPrologue xnode prologue_before dtype prologue_after
-  pure $ MkDoc prologue doc epilogue
+  is <- many instruction
+  doc <- map Comment comment
+  root <- element -- Add check if docttype exists for name of root element
+  pure $ MkDocument info dtype is doc root
 
 -- --------------------------------------------------------------------- [ EOF ]
