@@ -9,8 +9,8 @@
 -- --------------------------------------------------------------------- [ EOH ]
 module XML.DOM
 
-import public XML.Types
-import XML.Utils
+import XML.Types
+import public XML.Utils
 
 %access public
 
@@ -25,12 +25,21 @@ createDocType name id = MkDocType name id
 
 -- Add predefined qnames with namepsaces
 
-||| Creates an Empty Document
+||| Creates a Document with a empty node
 createDocument : QName -> Maybe DocType -> Document
 createDocument n dtd = MkDoc prolog e Nil
   where
     e = MkElement n Nil Nil
     prolog = MkPrologue (createXMLNodeDefault) Nil dtd Nil
+
+setRoot : Element -> Document -> Document
+setRoot r doc = record {root = r} doc
+
+createEmptyDoc : Document
+createEmptyDoc = MkDoc prolog e Nil
+  where
+    e = MkElement (MkQName "empty" Nothing Nothing) Nil Nil
+    prolog = MkPrologue (createXMLNodeDefault) Nil Nothing Nil
 
 -- ------------------------------------------------------------------ [ QNames ]
 
