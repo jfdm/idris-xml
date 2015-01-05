@@ -32,7 +32,7 @@ root = do
 
 mutual
   pathelem : Parser $ Either (XPath PATH) (XPath NODE)
-  pathelem = map Left anypath <|> map Right node <?> "Path Element"
+  pathelem = map Left decpath <|> map Left anypath <|> map Right node <?> "Path Element"
 
   abspath : Parser $ XPath PATH
   abspath = do
@@ -54,8 +54,18 @@ mutual
         Right n => pure $ r </> n
     <?> "Any Path"
 
+  decpath : Parser $ XPath PATH
+  decpath = do
+      r <- node
+      string "//" >! do
+        pelem <- pathelem
+        case pelem of
+          Left p  => pure $ r <//> p
+          Right n => pure $ r <//> n
+     <?> "Decendent Path"
+
 path : Parser $ XPath PATH
-path = abspath <|> anypath <?> "Path"
+path = decpath <|> anypath <|> abspath <?> "Path"
 
 public
 parseQuery : Parser $ XPath QUERY

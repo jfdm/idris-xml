@@ -12,18 +12,23 @@ import XML.XPath.Parser
 
 private
 queryDoc : Node -> XPath a -> List Element
-queryDoc e (Query q) = queryDoc e q
-queryDoc e (Elem i)  = getElementsByName i e
-queryDoc e (Root r)  = case getElement e of
-    Just n  => if getNodeName e == r then [n] else Nil
+queryDoc n (Query q) = queryDoc n q
+queryDoc n (Elem i)  = getElementsByName i n
+queryDoc n (Root r)  = case getElement n of
+    Just n  => if getNodeName n == r then [n] else Nil
     Nothing => Nil
-queryDoc e (Root p </> c) = case getElement e of
-    Just n => if getNodeName n == p
+queryDoc n (Root p </> Elem c) = let es = getElementsByName p n in
+    concatMap (\x => getChildElememtsByName c (NodeElement x)) es
+queryDoc n (Root p </> c) = case getElement n of
+    Just e => if getNodeName e == p
                then concatMap (\x => queryDoc x c) (getNodes e)
              else Nil
     Nothing => Nil
-queryDoc e (Elem p </> c) = let es = getElementsByName p e in concatMap (\x => queryDoc (NodeElement x) c) es
+queryDoc n (Elem p </> Elem c) = let es = getElementsByName p n in
+    concatMap (\x => getChildElememtsByName c (NodeElement x)) es
+queryDoc n (Elem p </> c) = let es = getElementsByName p n in concatMap (\x => queryDoc (NodeElement x) c) es
 
+queryDoc n (p <//> c) = Nil
 -- ------------------------------------------------------------------ [ Parser ]
 
 

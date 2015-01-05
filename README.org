@@ -12,6 +12,7 @@ A Simple XML library for Idris. It is a work in construction, so things will fai
 + The DOM model is simple.
 + Things I would like to have but not necessarily the time for include:
   + Tests!
+  + Add Eq instance, may need to add shapes
   + QuasiQuotes idiomatic construction of documents within Idris.
     + Something more consice than the dom model.
   + Full implementation of XPath, or Cursor, or XQuery

@@ -243,7 +243,12 @@ getElement : Node -> Maybe Element
 getElement (NodeElement e) = Just e
 getElement _               = Nothing
 
-||| Get all Elements with name.
+getChildElements : Node -> List Element
+getChildElements (NodeElement e) = catMaybes $ map (getElement) (getNodes e)
+getChildElements _               = Nil
+
+
+||| Get all Elements with a name.
 getElementsByQName : QName  -> Node -> List Element
 getElementsByQName qn (NodeElement e) = if (tag e) == qn
     then [e] ++ concatMap (getNodeElem) (nodes e)
@@ -254,8 +259,16 @@ getElementsByQName qn (NodeElement e) = if (tag e) == qn
     getNodeElem _               = Nil
 getElementsByQName _   _               = Nil
 
-||| Get all Elements with name.
+||| Get all Elements with a local name.
 getElementsByName : String -> Node -> List Element
-getElementsByName n e = getElementsByQName (createQName n) e
+getElementsByName naam e = getElementsByQName (createQName naam) e
+
+||| Get All Child Elements with a name
+getChildElememtsByQName : QName -> Node -> List Element
+getChildElememtsByQName qn n = filter (\x => tag x == qn) (getChildElements n)
+
+||| Get All Child Elements with a local name
+getChildElememtsByName : String -> Node -> List Element
+getChildElememtsByName name n = getChildElememtsByQName (createQName name) n
 
 -- --------------------------------------------------------------------- [ EOF ]
