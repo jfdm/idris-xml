@@ -1,0 +1,70 @@
+Welcome to Idris REPL!
+Type checking ./BookStore.idr
+λΠ> query' bstore "book"
+Right [(Element (MkQName "book" Nothing Nothing)
+                []
+                [(MkSigma ELEMENT
+                          (Element (MkQName "title" Nothing Nothing)
+                                   []
+                                   [(MkSigma TEXT (Text "Harry Potter"))])),
+                 (MkSigma ELEMENT
+                          (Element (MkQName "price" Nothing Nothing)
+                                   []
+                                   [(MkSigma TEXT (Text "29.99")),
+                                    (MkSigma COMMENT (Comment "as"))]))]),
+       (Element (MkQName "book" Nothing Nothing)
+                []
+                [(MkSigma ELEMENT
+                          (Element (MkQName "title" Nothing Nothing)
+                                   []
+                                   [(MkSigma TEXT (Text "Harry Potter"))])),
+                 (MkSigma ELEMENT
+                          (Element (MkQName "price" Nothing Nothing)
+                                   []
+                                   [(MkSigma TEXT (Text "29.99")),
+                                    (MkSigma COMMENT (Comment "as"))]))])] : Either String
+                                                                                    (List (Document ELEMENT))
+λΠ> query' bstore "price"
+Right [(Element (MkQName "price" Nothing Nothing)
+                []
+                [(MkSigma TEXT (Text "29.99")), (MkSigma COMMENT (Comment "as"))]),
+       (Element (MkQName "price" Nothing Nothing)
+                []
+                [(MkSigma TEXT (Text "29.99")),
+                 (MkSigma COMMENT (Comment "as"))])] : Either String (List (Document ELEMENT))
+Type checking ./BookStore.idr
+Type checking ./BookStore.idr
+Type checking ./BookStore.idr
+Type checking ./BookStore.idr
+Type checking ./BookStore.idr
+Type checking ./BookStore.idr
+Type checking ./BookStore.idr
+Type checking ./BookStore.idr
+Type checking ./BookStore.idr
+Type checking ./BookStore.idr
+Type checking ./BookStore.idr
+Type checking ./BookStore.idr
+Type checking ./BookStore.idr
+Type checking ./BookStore.idr
+Type checking ./BookStore.idr
+λΠ> query' bstore "price/isbn"
+Left "Result not found" : Either String (List (Document ELEMENT))
+λΠ> query' bstore "book/isbn"
+Left "Result not found" : Either String (List (Document ELEMENT))
+λΠ> show bstore
+"[Document  [XML \"\" \"\" True ]\n Nothing [] Nothing [Element  [  bookstore  ]\n [] [Element  [  book  ]\n [] [Element  [  title  ]\n [] [Text  \"Harry Potter\" ]\n ]\n , [Element  [  price  ]\n [] [Text  \"29.99\" ]\n , [Comment  \"as\" ]\n ]\n ]\n , [Element  [  book  ]\n [] [Element  [  title  ]\n [] [Text  \"Harry Potter\" ]\n ]\n , [Element  [  price  ]\n [] [Text  \"29.99\" ]\n , [Comment  \"as\" ]\n ]\n ]\n ]\n ]\n" : String
+λΠ> show bstore'
+"[Document  [XML \"1.2\" \"UTF-8\" True ]\n Nothing [] Nothing [Element  [  bookstore  ]\n [] [Element  [  book  ]\n [] [Element  [  isbn  ]\n [] [Text  \"123456\" ]\n ]\n , [Element  [  price  ]\n [] [Text  \"39.35\" ]\n ]\n , [Element  [  title  ]\n [] [Text  \"Learning XML\" ]\n ]\n ]\n , [Element  [  book  ]\n [] [Element  [  price  ]\n [] [Text  \"29.99\" ]\n ]\n , [Element  [  title  ]\n [] [Text  \"Harry Potter\" ]\n ]\n ]\n ]\n ]\n" : String
+λΠ> query bstore' "book/isbn"
+(input):1:7:When elaborating an application of function XPath.query:
+        Can't unify
+                Document DOCUMENT
+        with
+                String
+λΠ> query' bstore' "book/isbn"
+Right [(Element (MkQName "isbn" Nothing Nothing)
+                []
+                [(MkSigma TEXT (Text "123456"))])] : Either String (List (Document ELEMENT))
+λΠ> show $ query' bstore' "book/isbn"
+Can't resolve type class Show (Either String (List (Document ELEMENT)))
+λΠ> 

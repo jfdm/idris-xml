@@ -126,11 +126,31 @@ xmlinfo = token "<?xml" $!> do
            skip $ dquote (string "no")
            pure False
 
+pubident : Parser ExternalID
+pubident = do
+    token "PUBLIC"
+    loc <- literallyBetween '\"' <$ space
+    loc' <- literallyBetween '\"' <$ space
+    pure $ PublicID loc loc'
+  <?> "Public identifer"
+
+sysident : Parser ExternalID
+sysident = do
+    token "SYSTEM"
+    loc <- literallyBetween '\"' <$ space
+    pure $ SystemID loc
+  <?> "System Identifier"
+
+ident : Parser ExternalID
+ident = pubident <|> sysident <?> "Identifiers"
+
+||| Parse Doctypes
 public
 doctype : Parser DocType
 doctype = do
   v <- angles (token "!DOCTYPE" $> word)
-  pure $ MkDocType v Nothing
+  id <- opt ident
+  pure $ MkDocType v id
 
 public
 parseXML : Parser $ Document DOCUMENT
