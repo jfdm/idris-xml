@@ -44,3 +44,24 @@ bstore = MkDocument (MkXMLInfo "" "" True) Nothing Nil Nothing root
 
     root : Document ELEMENT
     root = Element (MkQName "bookstore" Nothing Nothing) Nil bs
+
+bstore' : Document DOCUMENT
+bstore' = setRoot root $ mkDocument (mkQName "bookstore") Nothing
+  where
+    rogElem : ElementNode
+    rogElem = "isbn" <+=> "123"
+
+    book1 : ElementNode
+    book1 = mkElementNode "book"
+          <++> ("title" <+=>  "Harry Potter")
+          <++> ("price" <+=> "29.99")
+
+
+    book2 : ElementNode
+    book2 = mkElementNode "book"
+          <++> ("title" <+=>  "Learning XML")
+          <++> ("price" <+=> "39.35")
+          <++> ("isbn"  <+=> "123456")
+
+    root : Document ELEMENT
+    root = mkSimpleElement "bookstore" <++> book1 <++> book2

@@ -106,6 +106,66 @@ infixl 2 <--> -- Remove Child
 infixl 2 <=>  -- Add Text Node
 infixl 2 <+=> -- Create and add text node
 
+class NodeOps e where
+  (<++>) : e -> (a : NodeTy ** Document a) -> {auto prf : ValidNode a} -> e
+  (<-->) : e -> (a : NodeTy ** Document a) -> {auto prf : ValidNode a} -> e
+  (<=>)  : e -> String -> e
+  (<+=>) : String -> String -> e
+
+||| Add child to element
+appendToElem : (a : NodeTy ** Document a)
+             -> Document ELEMENT
+             -> {auto prf : ValidNode a}
+             -> Document ELEMENT
+appendToElem c (Element n as ns) = Element n as (c :: ns)
+
+||| Add child to an element node
+appendToNode : (a : NodeTy ** Document a)
+           -> ElementNode
+           -> {auto prf : ValidNode a}
+           -> ElementNode
+appendToNode c (ELEMENT ** p) = mkNode $ appendToElem c p
+
+
+||| Remove Child from Element
+removeFromElem : (a : NodeTy ** Document a)
+               -> Document ELEMENT
+               -> {auto prf : ValidNode a}
+               -> Document ELEMENT
+removeFromElem c (Element n as ns) = Element n as (deleteBy nDel c ns)
+  where
+    nDel : (a : NodeTy ** Document a)
+         -> (b : NodeTy ** Document b)
+         -> Bool
+    nDel a b = getWitness a == getWitness b
+
+||| Remove Child from Node
+removeFromNode : (a : NodeTy ** Document a)
+               -> ElementNode
+               -> {auto prf : ValidNode a}
+               -> ElementNode
+removeFromNode c (ELEMENT ** p) = mkNode $ removeFromElem c p
+
+||| Set Value
+addText : String -> ElementNode -> ElementNode
+addText s e = appendToNode (mkTextNode s) e
+
+--  -------------------------------------------------------------------- [ Ops ]
+
+instance NodeOps (Document ELEMENT) where
+  (<++>) p c = appendToElem c p
+  (<-->) p c = removeFromElem c p
+  (<=>) e s = e <++> (mkTextNode s)
+  (<+=>) n v = (mkSimpleElement n) <=> v
+
+instance NodeOps ElementNode where
+  (<++>) p c = appendToNode c p
+  (<-->) p c = removeFromNode c p
+  (<=>) e s = e <++> (mkTextNode s)
+  (<+=>) name value = (mkElementNode name) <=> value
+
+
+-- --------------------------------------------------------------- [ Accessors ]
 ||| Get the attributes of the node
 getAttributes : Document a -> List (QName, String)
 getAttributes (Element _ as _) = as
@@ -123,65 +183,6 @@ getNodes _                = Nil
 ||| Does element have child nodes
 hasNodes : Document a -> Bool
 hasNodes n = isCons $ getNodes n
-
-||| Add child to element
-appendToElem : Document ELEMENT
-             -> (a : NodeTy ** Document a)
-             -> {auto prf : ValidNode a}
-             -> Document ELEMENT
-appendToElem (Element n as ns) c = Element n as (c :: ns)
-
-||| Add child to an element node
-appendToNode : ElementNode
-           -> (a : NodeTy ** Document a)
-           -> {auto prf : ValidNode a}
-           -> ElementNode
-appendToNode (ELEMENT ** p) c = mkNode $ appendToElem p c
-
-||| Add child to an element node
-(<++>) : ElementNode
-           -> (a : NodeTy ** Document a)
-           -> {auto prf : ValidNode a}
-           -> ElementNode
-(<++>) = appendToNode
-
-||| Remove Child from Element
-removeFromElem : Document ELEMENT
-               -> (a : NodeTy ** Document a)
-               -> {auto prf : ValidNode a}
-               -> Document ELEMENT
-removeFromElem (Element n as ns) c = Element n as (deleteBy nDel c ns)
-  where
-    nDel : (a : NodeTy ** Document a)
-         -> (b : NodeTy ** Document b)
-         -> Bool
-    nDel a b = getWitness a == getWitness b
-
-||| Remove Child from Node
-removeFromNode : ElementNode
-               -> (a : NodeTy ** Document a)
-               -> {auto prf : ValidNode a}
-               -> ElementNode
-removeFromNode (ELEMENT ** p) c = mkNode $ removeFromElem p c
-
-(<-->) : ElementNode
-       -> (a : NodeTy ** Document a)
-       -> {auto prf : ValidNode a}
-       -> ElementNode
-(<-->) = removeFromNode
-
-
-||| Set Value
-addText : String -> ElementNode -> ElementNode
-addText s e = e <++> mkTextNode s
-
-||| Add text to element node
-(<=>) : ElementNode -> String -> ElementNode
-(<=>) e s = addText s e
-
-||| Create and Set
-(<+=>) : String -> String -> ElementNode
-(<+=>) name value = (mkElementNode name) <=> value
 
 ||| Get node name
 ||| http://docs.oracle.com/javase/7/docs/api/org/w3c/dom/Node.html
