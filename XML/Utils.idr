@@ -10,10 +10,10 @@ module XML.Utils
 
 import XML.Types
 
-createXMLNodeDefault : XMLNode
-createXMLNodeDefault = MkXMLNode "1.2" "UTF-8" True
+createXMLInfoDefault : XMLInfo
+createXMLInfoDefault = MkXMLInfo "1.2" "UTF-8" True
 
-createXMLNode : String -> String -> Bool -> XMLNode
-createXMLNode v e a = MkXMLNode v e a
+createXMLInfo : String -> String -> Bool -> XMLInfo
+createXMLInfo v e a = MkXMLInfo v e a
 
 -- --------------------------------------------------------------------- [ EOF ]

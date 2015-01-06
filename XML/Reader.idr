@@ -26,14 +26,20 @@ readFile = readAcc ""
                      else pure acc
 
 public
-readXMLFile : String -> { [FILE_IO (), EXCEPTION String] } Eff Document
-readXMLFile f = do
+readDocString : String -> {[FILE_IO (), EXCEPTION String]} Eff (Document DOCUMENT)
+readDocString str = do
+  case parse parseXML str of
+    Left err  => raise err
+    Right res => pure $ res
+
+public
+readDocFile : String -> { [FILE_IO (), EXCEPTION String] } Eff (Document DOCUMENT)
+readDocFile f = do
     case !(open f Read) of
       True => do
         src <- readFile
         close
-        case parse parseXML src of
-          Left err  => raise err
-          Right res => pure $ res
+        readDocString src
       False => raise "Error"
+
 -- --------------------------------------------------------------------- [ EOF ]

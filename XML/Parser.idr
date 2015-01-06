@@ -15,28 +15,7 @@ import XML.ParseUtils
 
 %access private
 
-comment : Parser String
-comment = token ("<!--") >! do
-    cs <- map pack $ manyTill (anyChar) (space $> token "-->")
-    pure $ cs
-  <?> "Comment"
-
-instruction : Parser Instruction
-instruction = token "<?" >! do
-    itarget <- word <$ space
-    idata  <- some $ genKVPair (word <$ space) (dquote url)
-    token "?>"
-    pure $ MkInstruction itarget idata
-  <?> "Instruction"
-
-cNode : Parser $ Document COMMENT
-cNode = map Comment comment <?> "Comment Node"
-
-tNode : Parser $ Document TEXT
-tNode = do
-    txt <- some (xmlWord <$ space)
-    pure $ Text $ unwords txt
-  <?> "Text Node"
+-- ------------------------------------------------------------------- [ Utils ]
 
 attr : Parser $ (QName, String)
 attr = do
@@ -44,13 +23,6 @@ attr = do
     space
     pure (MkQName k Nothing Nothing, v)
   <?> "Node Attributes"
-
-cData : Parser $ Document CDATA
-cData = do
-    token "<![CDATA[" >! do
-      txt <- manyTill (anyChar) (token "]]>")
-      pure $ CData $ pack txt
-  <?> "CData"
 
 elemStart : Parser (String, QName, (List (QName, String)))
 elemStart = do
@@ -63,27 +35,79 @@ elemStart = do
 elemEnd : String -> Parser ()
 elemEnd s = angles (token "/" $!> token s) <?> "End Tag"
 
-emptyNode : Parser $ Document ELEMENT
-emptyNode = do
+-- ------------------------------------------------------------------- [ Nodes ]
+comment : Parser $ Document COMMENT
+comment = token ("<!--") >! do
+    cs <- map pack $ manyTill (anyChar) (space $> token "-->")
+    pure $ Comment cs
+  <?> "Comment"
+
+commentNode : Parser $ (COMMENT ** Document COMMENT)
+commentNode = do
+    c <- comment
+    pure $ mkNode c
+  <?> "Comment Node"
+
+instruction : Parser $ Document INSTRUCTION
+instruction = token "<?" >! do
+    itarget <- word <$ space
+    idata  <- some $ genKVPair (word <$ space) (dquote url)
+    token "?>"
+    pure $ Instruction itarget idata
+  <?> "Instruction"
+
+instructionNode : Parser $ (COMMENT ** Document COMMENT)
+instructionNode = do
+    c <- instruction
+    pure $ mkNode c
+  <?> "Comment Node"
+
+text : Parser $ (TEXT ** Document TEXT)
+text = do
+    txt <- some (xmlWord <$ space)
+    pure $ mkNode $ Text $ unwords txt
+  <?> "Text Node"
+
+cdata : Parser $ (CDATA ** Document CDATA)
+cdata = do
+    token "<![CDATA[" >! do
+      txt <- manyTill (anyChar) (token "]]>")
+      pure $ mkNode $ CData $ pack txt
+  <?> "CData"
+
+empty : Parser $ (ELEMENT ** Document ELEMENT)
+empty = do
     (_, qn, as) <- elemStart <$ space
     token "/" >! do
       token ">"
-      pure $ Element qn as Nil
+      pure $ mkNode $ Element qn as Nil
   <?> "Empty Node"
 
 mutual
   public
-  node : {a : NodeTy} -> Parser $ Document ?what
-  node = cNode <|> cData <|> emptyNode <|> element <|> tNode <?> "Nodes"
+  node : Parser $ (a : NodeTy ** Document a)
+  node = commentNode
+     <|> cdata
+     <|> instructionNode
+     <|> empty
+     <|> element
+     <|> text
+     <?> "Nodes"
 
-  element : Parser $ Document ELEMENT
+  element : Parser $ (ELEMENT ** Document ELEMENT)
   element = do
+      e <- rootElem
+      pure $ mkNode e
+    <?> "Element Node"
+
+  rootElem : Parser $ Document ELEMENT
+  rootElem = do
       (n, qn, as) <- elemStart <$ space
       token ">" $!> do
         cs <- some node
         elemEnd $ trim n
         pure $ Element qn as cs
-    <?> "Element"
+     <?> "Element"
 
 public
 xmlinfo : Parser XMLInfo
@@ -114,8 +138,8 @@ parseXML = do
   info <- xmlinfo
   dtype <- opt doctype
   is <- many instruction
-  doc <- map Comment comment
-  root <- element -- Add check if docttype exists for name of root element
+  doc <- opt comment
+  root <- rootElem -- Add check if docttype exists for name of root element
   pure $ MkDocument info dtype is doc root
 
 -- --------------------------------------------------------------------- [ EOF ]

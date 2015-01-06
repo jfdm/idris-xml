@@ -6,7 +6,6 @@ modules = XML.Types
         , XML.Reader
         , XML.ParseUtils
         , XML.Parser
-        , XML.Serialise
         , XML.Utils
         , XML.DOM
         , XML.XPath

@@ -40,17 +40,6 @@ instance Show XMLInfo where
 instance Eq XMLInfo where
   (==) (MkXMLInfo a b c) (MkXMLInfo x y z) = a == x && b == y && c == z
 
--- ------------------------------------------------------------ [ Instructions ]
--- <?target data?> SHould data be kv list?
-record Instruction : Type where
-  MkInstruction : (target : String) -> (kvpairs : List (String, String)) -> Instruction
-
-instance Show Instruction where
-  show (MkInstruction t d) = unwords ["[?", t , show d ,"?]\n"]
-
-instance Eq Instruction where
-  (==) (MkInstruction x xs) (MkInstruction y ys) = x == y && xs == ys
-
 -- --------------------------------------------------------------- [ Doc Types ]
 
 data ExternalID : Type where
@@ -81,44 +70,98 @@ instance Eq DocType where
 
 data NodeTy = DOCUMENT | ELEMENT | TEXT | CDATA | INSTRUCTION | COMMENT
 
+instance Eq NodeTy where
+  (==) DOCUMENT DOCUMENT = True
+  (==) ELEMENT ELEMENT = True
+  (==) TEXT TEXT = True
+  (==) CDATA CDATA = True
+  (==) INSTRUCTION INSTRUCTION = True
+  (==) COMMENT COMMENT = True
+  (==) _ _ = False
+
 ||| We are not going to recognise processing instructions.
 data ValidNode : NodeTy -> Type where
   ValidElem  : ValidNode ELEMENT
   ValidCData : ValidNode CDATA
   ValidText  : ValidNode TEXT
   ValidDoc   : ValidNode COMMENT
+  ValidInstr : ValidNode INSTRUCTION
 
+data Document : NodeTy -> Type where
+  MkDocument : XMLInfo
+             -> Maybe DocType
+             -> List (Document INSTRUCTION)
+             -> Maybe (Document COMMENT)
+             -> Document ELEMENT
+             -> Document DOCUMENT
+  Element : QName
+          -> List (QName, String)
+          -> List (ty : NodeTy ** Document ty)
+          -> Document ELEMENT
+  Comment : String -> Document COMMENT
+  Text : String -> Document TEXT
+  CData : String -> Document CDATA
+  Instruction : String -> List (String, String) -> Document INSTRUCTION
+
+instance Show (Document x) where
+  show (MkDocument info dtype ins doc es) = unwords ["[Document ",
+                   show info, show dtype, show ins, show doc, show es,"]\n"]
+  show (Element naam as ns) = unwords ["[Element ", show naam, show as, showNS, "]\n"]
+    where
+      showNS = unwords $ intersperse "," $ map (\x => show $ getProof x) ns
+  show (Comment str) = unwords ["[Comment ", show str, "]\n"]
+  show (Text txt) = unwords ["[Text ", show txt, "]\n"]
+  show (CData txt) =  unwords ["[CData ", show txt, "]\n"]
+  show (Instruction t d) = unwords ["[?", t , show d ,"?]\n"]
 
 mutual
-  data NodeList : Type where
-    Nil : NodeList
-    (::) : (n : Document a) -> NodeList -> {auto prf : ValidNode a} -> NodeList
+  %assert_total
+  eqDoc : (Document a) -> (Document a) -> Bool
+  eqDoc (MkDocument ai ad ais ac ae) (MkDocument bi bd bis bc be) =
+                 ai == bi
+              && ad == ad
+              && ais == bis
+              && ac == bc
+              && ae == be
+  eqDoc (Element an aa as) (Element bn ba bs) = an == bn && aa == ba
+  eqDoc (Comment a) (Comment b) = a == b
+  eqDoc (Text a)    (Text b) = a == b
+  eqDoc (CData a)   (CData b) = a == b
+  eqDoc (Instruction at ad) (Instruction bt bd) = at == bt && ad == bd
+  eqDoc _ _ = False
 
+  --- Eq on liss of nodes is removed.
+  instance Eq (Document x) where
+    (==) = eqDoc
 
-  data Document : NodeTy -> Type where
-    MkDocument : XMLInfo
-               -> Maybe DocType
-               -> List Instruction
-               -> Document COMMENT
-               -> Document ELEMENT
-               -> Document DOCUMENT
-    Element : QName
-            -> List (QName, String)
-            -> NodeList
-            -> Document ELEMENT
-    Comment : String -> Document COMMENT
-    Text : String -> Document TEXT
-    CData : String -> Document CDATA
+-- ------------------------------------------------------------ [ Node Aliases ]
+Node : NodeTy -> Type
+Node ty = (ty ** Document ty)
 
-  instance Show NodeList where
-    show Nil = "[]"
-    show ((::) x xs) = show x ++ show xs
+NodeList : Type
+NodeList = List (ty : NodeTy ** Document ty)
 
-  instance Show (Document x) where
-    show (MkDocument info dtype ins doc es) = unwords ["[Document ", show info, show dtype, show ins, show doc, show es,"]\n"]
-    show (Element naam as ns) = unwords ["[Element ", show naam, show as, show ns, "]\n"]
-    show (Comment str) = unwords ["[Comment ", show str, "]\n"]
-    show (Text txt) = unwords ["[Text ", show txt, "]\n"]
-    show (CData txt) =  unwords ["[CData ", show txt, "]\n"]
+CommentNode : Type
+CommentNode = (COMMENT ** Document COMMENT)
+
+ElementNode : Type
+ElementNode = (ELEMENT ** Document ELEMENT)
+
+TextNode : Type
+TextNode = (TEXT ** Document TEXT)
+
+CDataNode : Type
+CDataNode = (CDATA ** Document CDATA)
+
+InstructionNode : Type
+InstructionNode = (INSTRUCTION ** Document INSTRUCTION)
+
+-- ------------------------------------------------------------------- [ Utils ]
+
+mkNode : (Document a) -> {auto prf : ValidNode a} -> (a : NodeTy ** Document a)
+mkNode {a} n = (a ** n)
+
+setRoot : Document ELEMENT -> Document a -> Document DOCUMENT
+setRoot newe (MkDocument info dtype ins doc e) = MkDocument info dtype ins doc newe
 
 -- --------------------------------------------------------------------- [ EOF ]
