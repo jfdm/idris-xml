@@ -29,7 +29,7 @@ public
 readDocString : String -> {[EXCEPTION String, FILE_IO ()]} Eff (Document DOCUMENT)
 readDocString str = do
   case parse parseXML str of
-    Left err  => raise err
+    Left err  => raise $ show err
     Right res => pure $ res
 
 public

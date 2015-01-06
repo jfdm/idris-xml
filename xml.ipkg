@@ -11,3 +11,4 @@ modules = XML.Types
         , XML.XPath
         , XML.XPath.Parser
         , XML.XPath.Types
+        , XML

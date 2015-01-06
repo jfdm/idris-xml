@@ -95,7 +95,11 @@ manyTill p end = scan
     scan = do { end; return List.Nil } <|>
            do { x <- p; xs <- scan; return (x::xs)}
 
+
 -- ---------------------------------------------------------------- [ KV Pairs ]
+expValue : String -> Parser ()
+expValue s = skip $ dquote $ string s <$ space
+
 genKVPair : Parser a -> Parser b -> Parser (a, b)
 genKVPair key value = do
     k <- key
@@ -113,6 +117,7 @@ keyvalue = do
 keyvalue' : String -> Parser a -> Parser a
 keyvalue' key value = do
     (_,v) <- genKVPair (token key) value
+    space
     pure v
   <?> "Value from Known Key"
 

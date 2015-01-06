@@ -109,36 +109,40 @@ mutual
         pure $ Element qn as cs
      <?> "Element"
 
+isStandalone : Parser Bool
+isStandalone = (expValue "yes" $> return True)
+           <|> (expValue "true" $> return True) <?> "Expected Standalone"
+
+notStandalone : Parser Bool
+notStandalone = (expValue "no" $> return False)
+           <|> (expValue "false" $> return False) <?> "Expected not Standalone"
+
 public
 xmlinfo : Parser XMLInfo
 xmlinfo = token "<?xml" $!> do
-    vers <- keyvalue' "version" $ literallyBetween '\"'
-    enc  <- opt $ keyvalue' "encoding" $ literallyBetween '\"'
-    alone <- opt $ keyvalue' "standalone" standalone
+    vers <- keyvalue' "version" $ literallyBetween '\"' <$ space
+    enc  <- opt $ keyvalue' "encoding" $ literallyBetween '\"' <$ space
+    alone <- opt $ keyvalue' "standalone" standalone <$ space
     token "?>"
     pure $ MkXMLInfo vers (fromMaybe "UTF-8" enc) (fromMaybe True alone)
+   <?> "XML Info"
   where
     standalone : Parser Bool
-    standalone = do
-           skip $ dquote (string "yes")
-           pure True
-        <|> do
-           skip $ dquote (string "no")
-           pure False
+    standalone = isStandalone <|> notStandalone <?> "Standalone"
 
 pubident : Parser ExternalID
 pubident = do
-    token "PUBLIC"
-    loc <- literallyBetween '\"' <$ space
-    loc' <- literallyBetween '\"' <$ space
-    pure $ PublicID loc loc'
+    token "PUBLIC" >! do
+      loc <- literallyBetween '\"' <$ space
+      loc' <- literallyBetween '\"' <$ space
+      pure $ PublicID loc loc'
   <?> "Public identifer"
 
 sysident : Parser ExternalID
 sysident = do
-    token "SYSTEM"
-    loc <- literallyBetween '\"' <$ space
-    pure $ SystemID loc
+    token "SYSTEM" >! do
+      loc <- literallyBetween '\"' <$ space
+      pure $ SystemID loc
   <?> "System Identifier"
 
 ident : Parser ExternalID
@@ -147,19 +151,24 @@ ident = pubident <|> sysident <?> "Identifiers"
 ||| Parse Doctypes
 public
 doctype : Parser DocType
-doctype = do
-  v <- angles (token "!DOCTYPE" $> word)
-  id <- opt ident
-  pure $ MkDocType v id
+doctype = angles body <?> "DocType"
+  where
+    body : Parser $ DocType
+    body = do
+        token "!DOCTYPE" >! do
+          v <- word <$ space
+          id <- opt ident <$ space
+          pure $ MkDocType v id
+      <?> "DocType Body"
 
 public
 parseXML : Parser $ Document DOCUMENT
 parseXML = do
-  info <- xmlinfo
-  dtype <- opt doctype
-  is <- many instruction
-  doc <- opt comment
-  root <- rootElem -- Add check if docttype exists for name of root element
-  pure $ MkDocument info dtype is doc root
-
+    info <- xmlinfo <$ space
+    dtype <- opt doctype <$ space
+    is <- many instruction <$ space
+    doc <- opt comment <$ space
+    root <- rootElem -- Add check if docttype exists for name of root element
+    pure $ MkDocument info dtype is doc root
+  <?> "XML DOcument"
 -- --------------------------------------------------------------------- [ EOF ]
