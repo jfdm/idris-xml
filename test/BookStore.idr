@@ -1,6 +1,5 @@
 module BookStore
 
-import XML.Types
 import XML.DOM
 import XML.XPath
 

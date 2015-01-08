@@ -12,8 +12,8 @@ import Effects
 import Effect.File
 import Effect.Exception
 
-import XML.Types
-import XML.Parser
+import XML.DOM
+import public XML.Parser
 
 %access private
 

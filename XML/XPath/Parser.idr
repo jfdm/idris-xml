@@ -7,7 +7,6 @@
 -- --------------------------------------------------------------------- [ EOH ]
 module XML.XPath.Parser
 
-import XML.Types
 import XML.DOM
 
 import XML.XPath.Types

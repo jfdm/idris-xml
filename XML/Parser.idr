@@ -10,8 +10,7 @@ module XML.Parser
 import Lightyear
 import Lightyear.Strings
 
-import XML.Types
-import XML.Utils
+import XML.DOM
 import XML.ParseUtils
 
 %access private
@@ -90,7 +89,7 @@ mutual
       token ">" $!> do
         cs <- some node
         elemEnd $ trim n
-        pure $ Element qn as $ foldr XML.Utils.(++) XML.Types.Nil cs
+        pure $ Element qn as $ foldr XML.DOM.Utils.(++) XML.DOM.Model.Nil cs
      <?> "Element"
 
 isStandalone : Parser Bool

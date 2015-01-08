@@ -1,9 +1,8 @@
 module XPath
 
-import public XML.Types
-import public XML.DOM
+import XML.DOM
 
-import public XML.XPath.Types
+import XML.XPath.Types
 import XML.XPath.Parser
 
 %access public

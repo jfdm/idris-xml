@@ -20,7 +20,7 @@ Test = {TestEffs} Eff ()
 
 -- ------------------------------------------------------------- [ Test Runner ]
 tests : List Test -> {TestEffs} Eff ()
-tests Nil = do
+tests Nil = with Effects do
     putStrLn "All tests passed"
     pure ()
 tests (t::ts) = do

@@ -5,8 +5,7 @@ import System
 import TestRunner
 import ParsingTest
 
-import XML.Types
-import XML.Parser
+import XML.DOM
 import XML.Reader
 
 -- --------------------------------------------------------------------- [ XML ]
@@ -64,7 +63,16 @@ test9 = do
 -- -------------------------------------------------------------------- [ Main ]
 main : IO ()
 main = do
-    run $ tests [test, test1, test2, test3, test4, test5, test6, test7, test8, test9]
+    run $ tests [test]
+    run $ tests [test1]
+    run $ tests [test2]
+    run $ tests [test3]
+    run $ tests [test4]
+    run $ tests [test5]
+    run $ tests [test6]
+    run $ tests [test7]
+    run $ tests [test8]
+    run $ tests [test9]
     exit 0
 
 -- --------------------------------------------------------------------- [ EOF ]

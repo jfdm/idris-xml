@@ -2,13 +2,17 @@ package xml
 
 opts = "-p effects -p lightyear"
 
-modules = XML.Types
+modules = XML.DOM
+        , XML.DOM.Model
+        , XML.DOM.Show
+        , XML.DOM.Eq
+        , XML.DOM.API
+        , XML.DOM.Utils
+
         , XML.Reader
         , XML.ParseUtils
         , XML.Parser
-        , XML.Utils
-        , XML.DOM
+
         , XML.XPath
         , XML.XPath.Parser
         , XML.XPath.Types
-        , XML
