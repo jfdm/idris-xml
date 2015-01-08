@@ -26,7 +26,7 @@ readFile = readAcc ""
                      else pure acc
 
 public
-readDocString : String -> {[EXCEPTION String, FILE_IO ()]} Eff (Document DOCUMENT)
+readDocString : String -> {[EXCEPTION String]} Eff (Document DOCUMENT)
 readDocString str = do
   case parse parseXML str of
     Left err  => raise $ show err
