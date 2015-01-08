@@ -5,6 +5,7 @@ opts = "-p effects -p lightyear"
 modules = XML.DOM
         , XML.DOM.Model
         , XML.DOM.Show
+        , XML.DOM.ShowXML
         , XML.DOM.Eq
         , XML.DOM.API
         , XML.DOM.Utils
