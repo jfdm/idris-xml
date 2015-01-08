@@ -16,7 +16,7 @@ record QName : Type where
           -> QName
 
 instance Show QName where
-  show (MkQName n ns pre) = unwords ["[", showPre, n, showNS, "]\n"]
+  show (MkQName n ns pre) = unwords ["[", showPre, n, showNS, "]"]
     where
       showPre = case pre of
         Just p => p ++ ":"
@@ -68,16 +68,17 @@ instance Eq DocType where
 
 -- ------------------------------------------------------------------- [ Nodes ]
 
-data NodeTy = DOCUMENT | ELEMENT | TEXT | CDATA | INSTRUCTION | COMMENT
+data NodeTy = DOCUMENT | ELEMENT | TEXT | CDATA | INSTRUCTION | COMMENT | NODES
 
 instance Eq NodeTy where
-  (==) DOCUMENT DOCUMENT = True
-  (==) ELEMENT ELEMENT = True
-  (==) TEXT TEXT = True
-  (==) CDATA CDATA = True
+  (==) DOCUMENT    DOCUMENT    = True
+  (==) ELEMENT     ELEMENT     = True
+  (==) TEXT        TEXT        = True
+  (==) CDATA       CDATA       = True
   (==) INSTRUCTION INSTRUCTION = True
-  (==) COMMENT COMMENT = True
-  (==) _ _ = False
+  (==) COMMENT     COMMENT     = True
+  (==) NODES       NODES       = True
+  (==) _          _            = False
 
 ||| We are not going to recognise processing instructions.
 data ValidNode : NodeTy -> Type where
@@ -96,19 +97,23 @@ data Document : NodeTy -> Type where
              -> Document DOCUMENT
   Element : QName
           -> List (QName, String)
-          -> List (ty : NodeTy ** Document ty)
+          -> Document NODES
           -> Document ELEMENT
   Comment : String -> Document COMMENT
   Text : String -> Document TEXT
   CData : String -> Document CDATA
   Instruction : String -> List (String, String) -> Document INSTRUCTION
+  Nil : Document NODES
+  (::) : Document a -> {auto prf : ValidNode a} -> Document NODES -> Document NODES
+
 
 instance Show (Document x) where
   show (MkDocument info dtype ins doc es) = unwords ["[Document ",
                    show info, show dtype, show ins, show doc, show es,"]\n"]
-  show (Element naam as ns) = unwords ["[Element ", show naam, show as, showNS, "]\n"]
+  show (Element naam as ns) = unwords ["[Element ", show naam, show as, showNS ns, "]\n"]
     where
-      showNS = unwords $ intersperse "," $ map (\x => show $ getProof x) ns
+      showNS : Document NODES -> String
+      showNS (x::xs) = show x ++ "," ++ showNS xs
   show (Comment str) = unwords ["[Comment ", show str, "]\n"]
   show (Text txt) = unwords ["[Text ", show txt, "]\n"]
   show (CData txt) =  unwords ["[CData ", show txt, "]\n"]
@@ -116,51 +121,22 @@ instance Show (Document x) where
 
 mutual
   %assert_total
-  eqDoc : (Document a) -> (Document a) -> Bool
-  eqDoc (MkDocument ai ad ais ac ae) (MkDocument bi bd bis bc be) =
-                 ai == bi
-              && ad == ad
-              && ais == bis
-              && ac == bc
-              && ae == be
-  eqDoc (Element an aa as) (Element bn ba bs) = an == bn && aa == ba
-  eqDoc (Comment a) (Comment b) = a == b
-  eqDoc (Text a)    (Text b) = a == b
-  eqDoc (CData a)   (CData b) = a == b
+  eqDoc : (Document a) -> (Document b) -> Bool
+  eqDoc (MkDocument ai ad ais ac ae) (MkDocument bi bd bis bc be) = ai == bi && ad == ad && ais == bis && ac == bc && ae == be
+  eqDoc (Element an aa as)  (Element bn ba bs)  = an == bn && aa == ba && as == bs
+  eqDoc (Comment a)         (Comment b)         = a == b
+  eqDoc (Text a)            (Text b)            = a == b
+  eqDoc (CData a)           (CData b)           = a == b
   eqDoc (Instruction at ad) (Instruction bt bd) = at == bt && ad == bd
-  eqDoc _ _ = False
+  eqDoc Nil                 Nil                 = True
+  eqDoc (x::xs)             (y::ys)             = eqDoc x y && eqDoc xs ys
+  eqDoc _                   _                   = False
 
   --- Eq on liss of nodes is removed.
   instance Eq (Document x) where
     (==) = eqDoc
 
 -- ------------------------------------------------------------ [ Node Aliases ]
-Node : NodeTy -> Type
-Node ty = (ty ** Document ty)
-
-NodeList : Type
-NodeList = List (ty : NodeTy ** Document ty)
-
-CommentNode : Type
-CommentNode = (COMMENT ** Document COMMENT)
-
-ElementNode : Type
-ElementNode = (ELEMENT ** Document ELEMENT)
-
-TextNode : Type
-TextNode = (TEXT ** Document TEXT)
-
-CDataNode : Type
-CDataNode = (CDATA ** Document CDATA)
-
-InstructionNode : Type
-InstructionNode = (INSTRUCTION ** Document INSTRUCTION)
-
--- ------------------------------------------------------------------- [ Utils ]
-
-mkNode : (Document a) -> {auto prf : ValidNode a} -> (a : NodeTy ** Document a)
-mkNode {a} n = (a ** n)
-
 setRoot : Document ELEMENT -> Document a -> Document DOCUMENT
 setRoot newe (MkDocument info dtype ins doc e) = MkDocument info dtype ins doc newe
 

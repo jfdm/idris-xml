@@ -11,34 +11,34 @@ import XML.XPath.Parser
 -- ------------------------------------------------------------------- [ Query ]
 
 private
-queryDoc : (a : NodeTy ** Document a) -> XPath a -> List $ Document ELEMENT
-queryDoc n (Query q) = queryDoc n q
-queryDoc n (Elem i)  = getElementsByName i n
-queryDoc n (Root r)  = if getNodeName n == r then catMaybes [(getElement n)] else Nil
-queryDoc n (Root p </> Elem c) = let es = getChildElementsByName p n in
-    concatMap (\x => getChildElementsByName c (mkNode x)) es
-queryDoc n (Root p </> c) with (n)
-    | (ELEMENT ** e) = if getElementName e == p
-                         then concatMap (\x => queryDoc x c) (getNodes e)
-                         else Nil
-    | otherwise = Nil
-queryDoc n (Elem p </> Elem c) = let es = getElementsByName p n in
-    concatMap (\x => getChildElementsByName c (mkNode x)) es
-queryDoc n (Elem p </> c) = let es = getElementsByName p n in
-    concatMap (\x => queryDoc (mkNode x) c) es
-queryDoc n (p <//> c) = Nil
+queryDoc : XPath a -> Document ELEMENT -> List $ Document ELEMENT
+queryDoc (Query q) n = queryDoc q n
+queryDoc (Elem i)  n = getElementsByName i n
+queryDoc (Root r)  n = if getTagName n == r then [n] else Nil
+queryDoc (Root p </> Elem c) n = let es = getChildElementsByName p n in
+    concatMap (getChildElementsByName c) es
+queryDoc (Root p </> c) n = if getTagName n == p
+    then concatMap (queryDoc c) (getChildElements n)
+    else Nil
+
+queryDoc (Elem p </> Elem c) n = let es = getElementsByName p n in
+    concatMap (getChildElementsByName c) es
+queryDoc (Elem p </> c) n = let es = getElementsByName p n in
+    concatMap (queryDoc c) es
+queryDoc (p <//> c) n = Nil
 -- ------------------------------------------------------------------ [ Parser ]
 
 
-query : String -> Document DOCUMENT -> Either String (List $ Document ELEMENT)
+query : String
+      -> Document DOCUMENT
+      -> Either String (List $ Document ELEMENT)
 query qstr (MkDocument _ _ _ _ e) = case parse parseQuery qstr of
   Left err  => Left err
-  Right res => case queryDoc (mkNode e) res of
+  Right q => case queryDoc q e of
     Nil => Left "Result not found"
     xs  => Right xs
 
 query' : Document DOCUMENT -> String -> Either String (List $ Document ELEMENT)
 query' d q = query q d
-
 
 -- --------------------------------------------------------------------- [ EOF ]

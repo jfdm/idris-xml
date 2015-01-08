@@ -11,6 +11,7 @@ import Lightyear
 import Lightyear.Strings
 
 import XML.Types
+import XML.Utils
 import XML.ParseUtils
 
 %access private
@@ -42,12 +43,6 @@ comment = token ("<!--") >! do
     pure $ Comment cs
   <?> "Comment"
 
-commentNode : Parser $ (COMMENT ** Document COMMENT)
-commentNode = do
-    c <- comment
-    pure $ mkNode c
-  <?> "Comment Node"
-
 instruction : Parser $ Document INSTRUCTION
 instruction = token "<?" >! do
     itarget <- word <$ space
@@ -56,57 +51,46 @@ instruction = token "<?" >! do
     pure $ Instruction itarget idata
   <?> "Instruction"
 
-instructionNode : Parser $ (COMMENT ** Document COMMENT)
-instructionNode = do
-    c <- instruction
-    pure $ mkNode c
-  <?> "Comment Node"
-
-text : Parser $ (TEXT ** Document TEXT)
+text : Parser $ (Document TEXT)
 text = do
     txt <- some (xmlWord <$ space)
-    pure $ mkNode $ Text $ unwords txt
+    pure $ Text $ unwords txt
   <?> "Text Node"
 
-cdata : Parser $ (CDATA ** Document CDATA)
+cdata : Parser $ (Document CDATA)
 cdata = do
     token "<![CDATA[" >! do
       txt <- manyTill (anyChar) (token "]]>")
-      pure $ mkNode $ CData $ pack txt
+      pure $ CData $ pack txt
   <?> "CData"
 
-empty : Parser $ (ELEMENT ** Document ELEMENT)
+empty : Parser $ (Document ELEMENT)
 empty = do
     (_, qn, as) <- elemStart <$ space
     token "/" >! do
       token ">"
-      pure $ mkNode $ Element qn as Nil
+      pure $ Element qn as Nil
   <?> "Empty Node"
 
 mutual
+
   public
-  node : Parser $ (a : NodeTy ** Document a)
-  node = commentNode
-     <|> cdata
-     <|> instructionNode
-     <|> empty
-     <|> element
-     <|> text
+  node : Parser $ Document NODES
+  node = map (\x => mkNode x) comment
+     <|> map (\x => mkNode x) cdata
+     <|> map (\x => mkNode x) instruction
+     <|> map (\x => mkNode x) empty
+     <|> map (\x => mkNode x) element
+     <|> map (\x => mkNode x) text
      <?> "Nodes"
 
-  element : Parser $ (ELEMENT ** Document ELEMENT)
+  element : Parser $ Document ELEMENT
   element = do
-      e <- rootElem
-      pure $ mkNode e
-    <?> "Element Node"
-
-  rootElem : Parser $ Document ELEMENT
-  rootElem = do
       (n, qn, as) <- elemStart <$ space
       token ">" $!> do
         cs <- some node
         elemEnd $ trim n
-        pure $ Element qn as cs
+        pure $ Element qn as $ foldr XML.Utils.(++) XML.Types.Nil cs
      <?> "Element"
 
 isStandalone : Parser Bool
@@ -168,7 +152,7 @@ parseXML = do
     dtype <- opt doctype <$ space
     is <- many instruction <$ space
     doc <- opt comment <$ space
-    root <- rootElem -- Add check if docttype exists for name of root element
+    root <- element -- Add check if docttype exists for name of root element
     pure $ MkDocument info dtype is doc root
   <?> "XML DOcument"
 -- --------------------------------------------------------------------- [ EOF ]
