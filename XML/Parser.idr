@@ -13,6 +13,7 @@ import Lightyear.Strings
 import XML.DOM
 import XML.ParseUtils
 
+import Debug.Trace
 %access private
 
 -- ------------------------------------------------------------------- [ Utils ]
@@ -66,8 +67,7 @@ cdata = do
 empty : Parser $ (Document ELEMENT)
 empty = do
     (_, qn, as) <- elemStart <$ space
-    token "/" >! do
-      token ">"
+    token "/>" >! do
       pure $ Element qn as Nil
   <?> "Empty Node"
 
@@ -87,9 +87,9 @@ mutual
   element = do
       (n, qn, as) <- elemStart <$ space
       token ">" $!> do
-        ns <- some nodes
+        ns <- many nodes
         elemEnd $ trim n
-        let children = foldl  (\x => Utils.(++) x) Model.Nil ns
+        let children = foldNodes ns
         pure $ Element qn as children
      <?> "Element"
 

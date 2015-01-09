@@ -31,7 +31,7 @@ mkNodeList Nil       = DOM.Model.Nil
 mkNodeList (x :: xs) = DOM.Model.(::) x (mkNodeList xs)
 
 (++) : Document NODES -> Document NODES -> Document NODES
-(++) _       right = right
+(++) Nil     right = right
 (++) (x::xs) right = x :: xs ++ right
 
 delete : Document a
@@ -45,6 +45,9 @@ isCons : Document NODES -> Bool
 isCons Nil     = False
 isCons (x::xs) = True
 
+foldNodes : List $ Document NODES -> Document NODES
+foldNodes Nil     = Nil
+foldNodes (x::xs) = x ++ foldNodes xs
 
 instance Semigroup (Document NODES) where
   (<+>) = (++)

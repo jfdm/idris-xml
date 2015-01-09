@@ -19,8 +19,22 @@ book2 = mkSimpleElement "book"
       <++> ("price" <+=> "39.35")
       <++> ("isbn"  <+=> "123456")
 
-root : Document ELEMENT
-root = mkSimpleElement "bookstore" <++> book1 <++> book2 <++> rogElem
 
 bstore : Document DOCUMENT
 bstore = setRoot root $ mkDocument (mkQName "bookstore") Nothing
+where
+  root : Document ELEMENT
+  root = mkSimpleElement "bookstore" <++> book1 <++> book2 <++> rogElem
+
+
+people : Document DOCUMENT
+people = setRoot root $ mkDocument (mkQName "people") Nothing
+  where
+    p1 : Document ELEMENT
+    p1 = "person" <+=> "Michael"
+
+    p2 : Document ELEMENT
+    p2 = "person" <+=> "Eliezer"
+
+    root : Document ELEMENT
+    root = mkSimpleElement "people" <++> p1 <++> p2

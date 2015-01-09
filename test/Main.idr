@@ -14,6 +14,8 @@ test : Test
 test = do
   putStrLn "Test 0"
   parseTestGood nodes "<root><child>asas asas</child></root>"
+  parseTestGood nodes "<empty/>"
+  parseTestGood nodes "<empty/><empty as=\"asas\" bs=\"de\"/>"
 
 test1 : Test
 test1 = do
