@@ -32,10 +32,8 @@ query : String
       -> Document DOCUMENT
       -> Either String (List $ Document ELEMENT)
 query qstr (MkDocument _ _ _ _ e) = case parse parseQuery qstr of
-  Left err  => Left err
-  Right q => case queryDoc q e of
-    Nil => Left "Result not found"
-    xs  => Right xs
+  Left err => Left err
+  Right q  => Right $ queryDoc q e
 
 query' : Document DOCUMENT -> String -> Either String (List $ Document ELEMENT)
 query' d q = query q d
