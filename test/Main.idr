@@ -13,27 +13,27 @@ import XML.Reader
 test : Test
 test = do
   putStrLn "Test 0"
-  parseTestGood node "<root><child>asas asas</child></root>"
+  parseTestGood nodes "<root><child>asas asas</child></root>"
 
 test1 : Test
 test1 = do
   putStrLn "Test 1"
-  parseTestGood node "<!-- I am comment -->"
+  parseTestGood nodes "<!-- I am comment -->"
 
 test2 : Test
 test2 = do
   putStrLn "Test 2"
-  parseTestBad node "<root><child></root></child>"
+  parseTestBad nodes "<root><child></root></child>"
 
 test3 : Test
 test3 = do
   putStrLn "Test 3"
-  parseTestGood node "<? target value=\"as\" ?>"
+  parseTestGood nodes "<? target value=\"as\" ?>"
 
 test4 : Test
 test4 = do
   putStrLn "Test 4"
-  parseTestGood node "<root><abc/><person name=\"bob\"><age>13</age></person></root>"
+  parseTestGood nodes "<root><abc/><person name=\"bob\"><age>13</age></person></root>"
 
 test5 : Test
 test5 = do
@@ -53,7 +53,7 @@ test7 = do
 test8 : Test
 test8 = do
   putStrLn "Test 8"
-  parseTestGood node "<hello><world xmlns=\"worldnamespace\" first=\"1\" second=\"a\"><!--Just a - comment--><![CDATA[Some <CDATA&>]]><empty/><empty foo=\"bar\"/><characters>A</characters></world></hello>"
+  parseTestGood nodes "<hello><world xmlns=\"worldnamespace\" first=\"1\" second=\"a\"><!--Just a - comment--><![CDATA[Some <CDATA&>]]><empty/><empty foo=\"bar\"/><characters>A</characters></world></hello>"
 
 test9 : Test
 test9 = do

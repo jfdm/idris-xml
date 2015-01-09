@@ -41,7 +41,7 @@ data ValidNode : NodeTy -> Type where
   ValidDoc   : ValidNode COMMENT
   ValidInstr : ValidNode INSTRUCTION
 
-syntax IsOK = tactics { search 10; }
+syntax IsOK = tactics { search 100; }
 
 data Document : NodeTy -> Type where
   MkDocument : XMLInfo

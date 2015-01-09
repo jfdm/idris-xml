@@ -45,4 +45,11 @@ isCons : Document NODES -> Bool
 isCons Nil     = False
 isCons (x::xs) = True
 
+
+instance Semigroup (Document NODES) where
+  (<+>) = (++)
+
+instance Monoid (Document NODES) where
+  neutral = []
+
 -- --------------------------------------------------------------------- [ EOF ]

@@ -15,10 +15,10 @@ import TestRunner
 -- ----------------------------------------------------------- [ Parsing Tests ]
 
 ||| Expect a parsing test to pass.
-parseTestGood : Parser a -> String -> Test
+parseTestGood : Show a => Parser a -> String -> Test
 parseTestGood p s = case parse p s of
     Left err => raise $ "Expected passing test failed " ++ err
-    Right re => pure ()
+    Right re => putStrLn $ show re
 
 ||| Expect a test to fail
 parseTestBad : Parser a -> String -> Test

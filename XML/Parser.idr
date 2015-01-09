@@ -74,8 +74,8 @@ empty = do
 mutual
 
   public
-  node : Parser $ Document NODES
-  node = map (\x => mkNode x) comment
+  nodes : Parser $ Document NODES
+  nodes = map (\x => mkNode x) comment
      <|> map (\x => mkNode x) cdata
      <|> map (\x => mkNode x) instruction
      <|> map (\x => mkNode x) empty
@@ -87,9 +87,10 @@ mutual
   element = do
       (n, qn, as) <- elemStart <$ space
       token ">" $!> do
-        cs <- some node
+        ns <- some nodes
         elemEnd $ trim n
-        pure $ Element qn as $ foldr XML.DOM.Utils.(++) XML.DOM.Model.Nil cs
+        let children = foldl  (\x => Utils.(++) x) Model.Nil ns
+        pure $ Element qn as children
      <?> "Element"
 
 isStandalone : Parser Bool
