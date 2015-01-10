@@ -98,7 +98,7 @@ mutual
   element = do
       (n, qn, as) <- elemStart <$ space
       token ">" $!> do
-        ns <- many nodes
+        ns <- some nodes
         elemEnd $ trim n
         let children = foldNodes ns
         pure $ Element qn as children

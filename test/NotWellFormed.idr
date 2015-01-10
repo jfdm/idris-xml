@@ -11,6 +11,7 @@ import XML.Reader
 
 tests1 : IO ()
 tests1 = do
+  putStrLn "Running Test 1"
   parseTestBad (parseXML) "<?xml VERSION=\"1.0\"?> <doc></doc>"
   parseTestBad (parseXML) "<?xml encoding=\"UTF-8\" version=\"1.0\"?> <doc></doc>"
   parseTestBad (parseXML) "<?xml version=\"1.0\"encoding=\"UTF-8\" ?> <doc></doc>"
@@ -28,6 +29,7 @@ tests1 = do
 
 tests2 : IO ()
 tests2 = do
+  putStrLn "Running Test 2"
   parseTestBad (nodes) "<doc> <doc ? <a</a> </doc>"
   parseTestBad (nodes) "<doc> <.doc></.doc> </doc>"
   parseTestBad (nodes) "<doc><? ?></doc>"
@@ -41,6 +43,7 @@ tests2 = do
 
 tests3 : IO ()
 tests3 = do
+  putStrLn "Running Test 3"
   parseTestBad (nodes) "<doc a1></doc>"
   parseTestBad (nodes) "<doc a1=v1></doc>"
   parseTestBad (nodes) "<doc a1=\"v1'></doc>"
@@ -54,6 +57,7 @@ tests3 = do
 
 tests4 : IO ()
 tests4 = do
+  putStrLn "Running Test 4"
   parseTestBad (nodes) "<doc a1=\"a&b\"></doc>"
   parseTestBad (nodes) "<doc a1=\"&#123:\"></doc>"
   parseTestBad (nodes) "<doc 12=\"34\"></doc>"
@@ -66,11 +70,8 @@ tests4 = do
 
 tests5 : IO ()
 tests5 = do
-  parseTestBad (nodes) "<doc>A form feed (asaas) is not legal in data</doc>"
+  putStrLn "Running Test 5"
   parseTestBad (nodes) "<doc><?pi a form feed (asaas) is not allowed in a pi?></doc>"
-  parseTestBad (nodes) "<doc><!-- a form feed (asaas) is not allowed in a comment --></doc>"
-  parseTestBad (nodes) "<doc>abasaddef</doc>"
-  parseTestBad (nodes) "<docasaas>A form-feed is not white space or a name character</docasaas>"
   parseTestBad (nodes) "<doc>1 < 2 but not in XML</doc>"
   parseTestBad (nodes) "<doc></doc> Illegal data"
   parseTestBad (nodes) "<doc></doc> &#32;"
@@ -78,12 +79,12 @@ tests5 = do
 
 tests6 : IO ()
 tests6 = do
+  putStrLn "Running Test 6"
   parseTestBad (nodes) "<doc><a></aa></doc>"
   parseTestBad (nodes) "<doc></doc> <doc></doc>"
   parseTestBad (nodes) "<doc/> <doc></doc>"
   parseTestBad (nodes) "<doc/></doc/>"
   parseTestBad (nodes) "<doc/> Illegal data"
-  parseTestBad (nodes) "<doc/><doc/>"
   parseTestBad (nodes) "<doc> <a/ </doc>"
   parseTestBad (nodes) "<doc> <a/</a> </doc>"
   parseTestBad (nodes) "<doc> <a / > </doc>"
@@ -91,6 +92,7 @@ tests6 = do
 
 tests7 : IO ()
 tests7 = do
+  putStrLn "Running Test 7"
   parseTestBad (nodes) "<doc> <a><![CDATA[xyz]]]></a> <![CDATA[]]></a> </doc>"
   parseTestBad (nodes) "<!-- a comment --> <![CDATA[]]> <doc></doc>"
   parseTestBad (nodes) "<!-- a comment --> &#32; <doc></doc>"
@@ -105,6 +107,7 @@ tests7 = do
 
 tests8 : IO ()
 tests8 = do
+  putStrLn "Running Test 8"
   parseTestBad (nodes) "<doc> <![cdata[data]]> </doc>"
   parseTestBad (nodes) "<!-- --> <?xml version=\"1.0\"?> <doc></doc>"
   parseTestBad (nodes) "<doc> <?xml version=\"1.0\"?> </doc>"
@@ -121,6 +124,7 @@ tests8 = do
 
 NotWellFormedTests : IO ()
 NotWellFormedTests = do
+  putStrLn "Not WellFormed Tests"
   tests1
   tests2
   tests3
