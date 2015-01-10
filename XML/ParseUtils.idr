@@ -46,7 +46,7 @@ reservedChar = do
       '\''      => satisfy (const False)
       '<'       => satisfy (const False)
       '>'       => satisfy (const False)
-      otherwise => satisfy (const False)
+      otherwise => pure c
   <?> "reserved characters"
 
 private
