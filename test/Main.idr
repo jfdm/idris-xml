@@ -13,6 +13,7 @@ import XML.Reader
 test : Test
 test = do
   putStrLn "Test 0"
+  parseTestGood nodes "<root xmlns:h=\"http://www.w3.org/TR/html4/\" xmlns:f=\"http://www.w3schools.com/furniture\"/>"
   parseTestGood nodes "<root><child>asas asas</child></root>"
   parseTestGood nodes "<empty/>"
   parseTestGood nodes "<empty/><empty as=\"asas\" bs=\"de\"/>"
@@ -61,6 +62,11 @@ test9 : Test
 test9 = do
   putStrLn "Text 9"
   parseTestGood parseXML "<?xml version=\"1.0\" encoding=\"utf-16\"?><!DOCTYPE hello PUBLIC \"//PUBLIC/hello\" \"hello.dtd\"><hello><world xmlns=\"worldnamespace\" first=\"1\" second=\"a\"><!--Just a - comment--><![CDATA[Some <CDATA&>]]><empty/><empty foo=\"bar\"/><characters>A</characters></world></hello>"
+
+test10 : Test
+test10 = do
+  putStrLn "Test 10"
+  parseTestGood nodes "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">asas</xs:schema>"
 
 -- -------------------------------------------------------------------- [ Main ]
 main : IO ()
