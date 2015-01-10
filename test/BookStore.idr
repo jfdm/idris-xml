@@ -31,7 +31,7 @@ people : Document DOCUMENT
 people = setRoot root $ mkDocument (mkQName "people") Nothing
   where
     p1 : Document ELEMENT
-    p1 = "person" <+=> "Michael"
+    p1 = mkElementPrefix "person" "pre" <=> "Michael"
 
     p2 : Document ELEMENT
     p2 = "person" <+=> "Eliezer"

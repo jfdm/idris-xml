@@ -11,15 +11,15 @@ import XML.DOM.Model
 
 -- ------------------------------------------------------------------- [ QName ]
 instance Show QName where
-  show (MkQName n ns pre) = unwords ["[", showPre, n, showNS, "]"]
+  show (MkQName n ns pre) = "[" ++ showPre ++ n ++ showNS ++ "]"
     where
       showPre = case pre of
         Just p => p ++ ":"
         Nothing => ""
       showNS = case ns of
-        Just n => case pre of
-          Just p => unwords ["xmlns:",p,"=",n]
-          Nothing => unwords ["xmlns=",n]
+        Just ns' => case pre of
+          Just p => " xmlns:" ++ p ++ "=" ++ ns'
+          Nothing => " xmlns=" ++ ns'
         Nothing => ""
 
 instance Show XMLInfo where

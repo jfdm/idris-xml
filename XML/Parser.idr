@@ -17,7 +17,7 @@ import Debug.Trace
 %access private
 
 -- ------------------------------------------------------------------- [ Utils ]
-qname : Parser (String, Maybe String, QName)
+qname : Parser (String, QName)
 qname = do
     pre <- opt $ (word <$ colon)
     name <- word
@@ -26,11 +26,11 @@ qname = do
         Just p => p ++ ":"
         Nothing => ""
     let tag = pr ++ name
-    pure (tag, pre, MkQName name pre Nothing)
+    pure (tag, MkQName name Nothing pre)
 
 attr : Parser $ (QName, String)
 attr = do
-    ((_,_,qn),v) <- genKVPair (qname) (dquote url)
+    ((_,qn),v) <- genKVPair (qname) (literallyBetween '\"')
     space
     pure (qn, v)
   <?> "Node Attributes"
@@ -38,13 +38,10 @@ attr = do
 elemStart : Parser (String, QName, (List (QName, String)))
 elemStart = do
     token "<"
---    pre <- opt word <$ colon
---    n <- word <$ space
-    (n, pre, qn) <- qname
+    (tag, qn) <- qname
     ns <- opt $ keyvalue' "xmlns" (literallyBetween '\"')
     as <- opt $ some (attr)
-    let tag = fromMaybe "" pre ++ n
-    pure (n, MkQName n pre ns, fromMaybe Nil as)
+    pure (tag, record {nspace = ns} qn, fromMaybe Nil as)
   <?> "Start Tag"
 
 elemEnd : String -> Parser ()

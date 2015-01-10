@@ -49,9 +49,6 @@ reservedChar = do
       otherwise => satisfy (const False)
   <?> "reserved characters"
 
-allowedChar : Parser Char
-allowedChar = reservedChar <|> satisfy isAlphaNum <?> "Reserved Char"
-
 private
 urlChar : Parser Char
 urlChar = do
@@ -75,6 +72,9 @@ pathChar = urlChar <|> satisfy isAlphaNum <?> "Path Char"
 url : Parser String
 url = map pack (some pathChar) <?> "URL"
 
+
+allowedChar : Parser Char
+allowedChar = reservedChar <|> urlChar <|> satisfy isAlphaNum <?> "Reserved Char"
 
 ||| Parse XML Words
 xmlWord : Parser String

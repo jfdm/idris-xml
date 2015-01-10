@@ -14,6 +14,7 @@ test : Test
 test = do
   putStrLn "Test 0"
   parseTestGood nodes "<root xmlns:h=\"http://www.w3.org/TR/html4/\" xmlns:f=\"http://www.w3schools.com/furniture\"/>"
+  parseTestGood nodes "<library xmlns=\"http://eric.van-der-vlist.com/ns/library\" xmlns:hr=\"http://eric.van-der-vlist.com/ns/person\"/>"
   parseTestGood nodes "<root><child>asas asas</child></root>"
   parseTestGood nodes "<empty/>"
   parseTestGood nodes "<empty/><empty as=\"asas\" bs=\"de\"/>"
@@ -22,6 +23,7 @@ test1 : Test
 test1 = do
   putStrLn "Test 1"
   parseTestGood nodes "<!-- I am comment -->"
+  parseTestGood nodes "<hr:born>1950-10-04</hr:born>"
 
 test2 : Test
 test2 = do

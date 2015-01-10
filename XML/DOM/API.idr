@@ -29,17 +29,31 @@ mkDocument n dtd = MkDocument (createXMLInfoDefault) dtd Nil Nothing
 
 -- ------------------------------------------------------------------ [ QNames ]
 
-||| Create a local Qualified Name
+||| Create a local name
 mkQName : String -> QName
 mkQName n = MkQName n Nothing Nothing
 
 ||| Create a qualified name with a name space
-mkQNameNS : String -> String -> QName
+|||
+||| @n The name
+||| @ns   The name space.
+mkQNameNS : (n : String) -> (ns : String) -> QName
 mkQNameNS n ns = MkQName n (Just ns) Nothing
 
-||| Create a tag with namspace and prefix.
-mkTagNSPrefix : String -> String -> String -> QName
-mkTagNSPrefix n pre ns = MkQName n (Just ns) (Just pre)
+||| Create a tag with a name and a prefix
+|||
+||| @n The name
+||| @pre The prefix
+mkQNamePrefix : (n : String) -> (pre : String) -> QName
+mkQNamePrefix n pre = MkQName n Nothing (Just pre)
+
+||| Create a tag with namespace and prefix.
+|||
+||| @n The name
+||| @pre The prefix.
+||| @ns The namespace
+mkQNameNSPrefix : (n : String) -> (pre : String) -> (ns : String) -> QName
+mkQNameNSPrefix n pre ns = MkQName n (Just ns) (Just pre)
 
 ||| Create a prefixed qualified name, intended for use with
 ||| attributes.
@@ -59,14 +73,38 @@ mkElement : QName -> Document ELEMENT
 mkElement qname = Element qname Nil Nil
 
 ||| Create a element with a Namespace.
-mkElementNS : QName -> String -> Document ELEMENT
-mkElementNS qname ns = Element tag Nil Nil
+|||
+||| @n The name
+||| @ns The namespace
+mkElementNS : (n : String) -> (ns : String) -> Document ELEMENT
+mkElementNS n ns = Element tag Nil Nil
   where
-    tag = mkQNameNS (name qname) ns
+    tag = mkQNameNS n ns
+
+||| Create an element with a prefix
+|||
+||| @n The name
+||| @pre The prefix.
+mkElementPrefix : (n : String) -> (pre : String) -> Document ELEMENT
+mkElementPrefix n p = Element (mkQNamePrefix n p) Nil Nil
+
+||| Create an element with a namespace and a prefix
+|||
+||| @n The name
+||| @pre The prefix.
+||| @ns The namespace
+mkElementNSPrefix : (n : String)
+                  -> (pre : String)
+                  -> (ns : String)
+                  -> Document ELEMENT
+mkElementNSPrefix n pre ns = Element (mkQNameNSPrefix n pre ns) Nil Nil
 
 ||| Create a key value pair
 mkAttribute : String -> String -> (QName, String)
 mkAttribute k v = (mkQName k, v)
+
+mkAttributePrefix : String -> String -> String -> (QName, String)
+mkAttributePrefix k p v = (mkQNamePrefix k p, v)
 
 -- ----------------------------------------------------------- [ Node Creation ]
 
@@ -199,21 +237,27 @@ getTagNS (Element n _ _ ) = nspace n
 
 ||| Get value for a given attribute
 getAttribute : String -> Document ELEMENT -> Maybe String
-getAttribute key e = lookup (mkQName key) (getAttributes e)
+getAttribute key e = lookupBy (\x,y => name x == name y)
+                              (mkQName key)
+                              (getAttributes e)
 
 ||| Remove first occurance of attribute.
 removeAttribute : String -> Document ELEMENT -> Document ELEMENT
 removeAttribute key (Element n as ns) = Element n (attrs') ns
   where
-    attrs' = deleteBy (\(x,y), (a,b) => x==a )
+    attrs' = deleteBy (\(x,y), (a,b) => name x== name a )
                       (mkQName key, "")
                       (as)
 
 ||| Set first occurance of atttribute to new value.
-setAttribute : (key : String) -> (value : String) -> Document ELEMENT -> Document ELEMENT
+setAttribute : (key : String)
+             -> (value : String)
+             -> Document ELEMENT
+             -> Document ELEMENT
 setAttribute k v (Element n as ns) = Element n attrs' ns
   where
-    attrs' = mkAttribute k v :: (deleteBy (\(x,y), (a,b) => x==a ) (mkQName k, "") (as))
+    attrs' = mkAttribute k v :: (deleteBy (\(x,y), (a,b) => name x== name a )
+                                          (mkQName k, "") (as))
 
 ||| getElements
 getElements : Document NODES -> List $ Document ELEMENT
@@ -228,23 +272,30 @@ getChildElements (Element _ _ ns) = getElements ns
 getChildElements _                = Nil
 
 ||| Get all Elements with a name.
-getElementsByQName : QName  -> Document a -> List $ Document ELEMENT
-getElementsByQName qn (Element n as ns) = if n == qn
-    then [Element n as ns] ++ func qn ns
-    else func qn ns
+getElementsBy : (QName -> QName -> Bool)
+              -> QName
+              -> Document a
+              -> List $ Document ELEMENT
+getElementsBy eq qn (Element n as ns) = if eq n qn
+    then [Element n as ns] ++ func eq qn ns
+    else func eq qn ns
   where
-    func : QName -> Document NODES -> List $ Document ELEMENT
-    func _ Nil     = Nil
-    func n (x::xs) = getElementsByQName n x ++ func n xs
+    func : (QName -> QName -> Bool) -> QName -> Document NODES -> List $ Document ELEMENT
+    func _ _ Nil     = Nil
+    func f n (x::xs) = getElementsBy f n x ++ func f n xs
 
-getElementsByQName _   _ = Nil
+getElementsBy _  _  _ = Nil
 
-||| Get all Elements with a local name.
+||| Get all Elements with a given QName
+getElementsByQName : QName  -> Document a -> List $ Document ELEMENT
+getElementsByQName qn d = getElementsBy (==) qn d
+
+
+||| Get all Elements with a given name. This ignores prefixes and namespaces.
 getElementsByName : String -> Document a -> List $ Document ELEMENT
-getElementsByName naam e = getElementsByQName (mkQName naam) e
+getElementsByName naam e = getElementsBy (\x,y => name x == name y) (mkQName naam) e
 
-
-||| Get All Child Elements with a name
+||| Get All Child Elements with a given QName.
 getChildElementsByQName : QName -> Document a -> List $ Document ELEMENT
 getChildElementsByQName qn n = filter (\x => getTag x == qn) (getChildElements n)
 
