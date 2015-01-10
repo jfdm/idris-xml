@@ -2,7 +2,7 @@ package test
 
 opts = "-p lightyear -p effects -p xml"
 
-modules = Main, TestRunner, ParsingTest
+modules = Main, TestRunner, ParsingTest, WellFormed, NotWellFormed
 
 executable = a.out
 main = Main

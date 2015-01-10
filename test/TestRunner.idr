@@ -15,15 +15,16 @@ import public Effect.Exception
 TestEffs : List EFFECT
 TestEffs = [STDIO, EXCEPTION String]
 
-Test : Type
-Test = {TestEffs} Eff ()
+EffTest : Type
+EffTest = {TestEffs} Eff ()
 
 -- ------------------------------------------------------------- [ Test Runner ]
-tests : List Test -> {TestEffs} Eff ()
+tests : List EffTest -> {TestEffs} Eff ()
 tests Nil = with Effects do
     putStrLn "All tests passed"
     pure ()
 tests (t::ts) = do
     result <- t
     tests ts
+
 -- --------------------------------------------------------------------- [ EOF ]
