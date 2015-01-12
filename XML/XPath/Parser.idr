@@ -13,8 +13,17 @@ import XML.XPath.Types
 
 import public Lightyear
 import public Lightyear.Strings
+import XML.ParseUtils
 
 %access private
+
+nodetest : Parser $ XPath TEST
+nodetest = do string "text()"; pure Text
+  <|> do string "comment()"; pure Comment
+  <|> do string "@"
+         w <- word
+         pure (Attr w)
+  <?> "Node Tests"
 
 node : Parser $ XPath NODE
 node = do
@@ -29,9 +38,15 @@ root = do
     pure $ Root name
   <?> "root"
 
+data ParseRes = P (XPath PATH) | N (XPath NODE) | T (XPath TEST)
+
 mutual
-  pathelem : Parser $ Either (XPath PATH) (XPath NODE)
-  pathelem = map Left decpath <|> map Left anypath <|> map Right node <?> "Path Element"
+  pathelem : Parser $ ParseRes
+  pathelem = map T nodetest
+         <|> map P decpath
+         <|> map P anypath
+         <|> map N node
+         <?> "Path Element"
 
   abspath : Parser $ XPath PATH
   abspath = do
@@ -39,8 +54,9 @@ mutual
       string "/"
       pelem <- pathelem
       case pelem of
-        Left p  => pure $ r </> p
-        Right n => pure $ r </> n
+        P p  => pure $ r </> p
+        N n  => pure $ r </> n
+        T t  => pure $ r </> t
     <?> "Absolute path"
 
   anypath : Parser $ XPath PATH
@@ -49,8 +65,9 @@ mutual
       string "/"
       pelem <- pathelem
       case pelem of
-        Left p  => pure $ r </> p
-        Right n => pure $ r </> n
+        P p  => pure $ r </> p
+        N n  => pure $ r </> n
+        T t  => pure $ r </> t
     <?> "Any Path"
 
   decpath : Parser $ XPath PATH
@@ -59,8 +76,9 @@ mutual
       string "//" >! do
         pelem <- pathelem
         case pelem of
-          Left p  => pure $ r <//> p
-          Right n => pure $ r <//> n
+          P p  => pure $ r </> p
+          N n  => pure $ r </> n
+          T t  => pure $ r </> t
      <?> "Decendent Path"
 
 path : Parser $ XPath PATH
@@ -68,6 +86,9 @@ path = decpath <|> anypath <|> abspath <?> "Path"
 
 public
 parseQuery : Parser $ XPath QUERY
-parseQuery = map Query path <|> map Query root <|> map Query node
-
+parseQuery = map Query nodetest
+         <|> map Query path
+         <|> map Query root
+         <|> map Query node
+         <?> "XPath Query"
 -- --------------------------------------------------------------------- [ EOF ]
