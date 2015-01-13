@@ -61,4 +61,7 @@ data Document : NodeTy -> Type where
   Nil : Document NODES
   (::) : Document a -> { default tactics {search 100; } prf : ValidNode a} -> Document NODES -> Document NODES
 
+getDocElemTy : {a : NodeTy} -> Document a -> NodeTy
+getDocElemTy {a} _ = a
+
 -- --------------------------------------------------------------------- [ EOF ]

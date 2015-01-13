@@ -26,15 +26,14 @@ infixl 2 <//>
 data XPath : XPathTy -> Type where
   ||| An XPath Query
   Query : XPath a -> XPath QUERY
-  ||| Find a node.
   Elem : String -> XPath NODE
-  ||| Find an attribute
   Attr : String -> XPath TEST
-  ||| Node Test
   Text : XPath TEST
   Comment : XPath TEST
-  ||| Get Root
+  CData : XPath TEST
   Root : String -> XPath ROOT
+  DRoot : String -> XPath ROOT
+
   ||| An absolute path
   (</>) : XPath a
         -> XPath b
@@ -53,6 +52,8 @@ instance Show (XPath x) where
   show (Attr a)  = "@" ++ a
   show (Text)    = "text()"
   show (Comment) = "comment()"
+  show (CData)   = "cdata()"
+  show (DRoot r) = "//" ++ r
   show (p </> c) = show p ++ "/" ++ show c
   show (p <//> c) = show p ++ "//" ++ show c
 

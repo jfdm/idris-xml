@@ -10,8 +10,11 @@
 module XML.DOM.API
 
 import XML.DOM.Model
+import XML.DOM.Show
 import XML.DOM.Eq
 import XML.DOM.Utils
+
+import Debug.Trace
 
 %access public
 
@@ -259,6 +262,21 @@ setAttribute k v (Element n as ns) = Element n attrs' ns
     attrs' = mkAttribute k v :: (deleteBy (\(x,y), (a,b) => name x== name a )
                                           (mkQName k, "") (as))
 
+
+
+-- ------------------------------------------------------------ [ Node Queries ]
+{-- Attempts at making dry.
+getElementsByType : {ty : NodeTy} -> NodeTy -> Document NODES -> List $ Document ty
+getElementsByType _  Nil     = Nil
+getElementsByType ty (x::xs) = if getDocElemTy x == ty
+    then x :: getElementsByType ty xs
+    else getElementsByType ty xs
+
+getChildrenBy : {ty : NodeTy} -> NodeTy -> Document a -> List $ Document ty
+getChildrenBy ty (Element _ _ ns) = getElementsByType ty ns
+getChildrenBy _  _                = Nil
+-}
+
 ||| getElements
 getElements : Document NODES -> List $ Document ELEMENT
 getElements Nil     = Nil
@@ -266,25 +284,51 @@ getElements (x::xs) with (x)
     | (Element _ _ _) = x :: getElements xs
     | otherwise       = getElements xs
 
+getText : Document NODES -> List $ Document TEXT
+getText Nil = Nil
+getText (x::xs) with (x)
+    | (Text t)  = x :: getText xs
+    | otherwise = getText xs
+
+getComments : Document NODES -> List $ Document COMMENT
+getComments Nil = Nil
+getComments (x::xs) with (x)
+    | (Comment t)  = x :: getComments xs
+    | otherwise = getComments xs
+
+getCData : Document NODES -> List $ Document CDATA
+getCData Nil = Nil
+getCData (x::xs) with (x)
+    | (CData t)  = x :: getCData xs
+    | otherwise = getCData xs
+
+
 ||| Get the immediate child elements
 getChildElements : Document a -> List $ Document ELEMENT
 getChildElements (Element _ _ ns) = getElements ns
 getChildElements _                = Nil
 
-||| Get all Elements with a name.
-getElementsBy : (QName -> QName -> Bool)
-              -> QName
-              -> Document a
-              -> List $ Document ELEMENT
-getElementsBy eq qn (Element n as ns) = if eq n qn
-    then [Element n as ns] ++ func eq qn ns
-    else func eq qn ns
-  where
-    func : (QName -> QName -> Bool) -> QName -> Document NODES -> List $ Document ELEMENT
-    func _ _ Nil     = Nil
-    func f n (x::xs) = getElementsBy f n x ++ func f n xs
+-- --------------------------------------------------------- [ Element Queries ]
+mutual
+  private
+  func : (QName -> QName -> Bool)
+       -> QName
+       -> List $ Document ELEMENT
+       -> List $ Document ELEMENT
+  func _ _ Nil     = Nil
+  func f n (x::xs) = getElementsBy f n x ++ func f n xs
 
-getElementsBy _  _  _ = Nil
+  ||| Get all Elements with a name.
+  getElementsBy : (QName -> QName -> Bool)
+                -> QName
+                -> Document a
+                -> List $ Document ELEMENT
+  getElementsBy eq qn e with (e)
+     | (MkDocument _ _ _ _ r) = getElementsBy eq qn r
+     | (Element _ _ _) = if eq (getTag e) qn
+         then [e] ++ func eq qn (getChildElements e)
+         else func eq qn (getChildElements e)
+     | otherwise = Nil
 
 ||| Get all Elements with a given QName
 getElementsByQName : QName  -> Document a -> List $ Document ELEMENT

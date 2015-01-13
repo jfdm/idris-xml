@@ -17,3 +17,4 @@ modules = XML.DOM
         , XML.XPath
         , XML.XPath.Parser
         , XML.XPath.Types
+        , XML.XPath.Results
