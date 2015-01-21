@@ -29,7 +29,7 @@ public
 readDocString : String -> {[EXCEPTION String]} Eff (Document DOCUMENT)
 readDocString str = do
   case parse parseXML str of
-    Left err  => raise $ show err
+    Left err  => raise err
     Right res => pure $ res
 
 public
@@ -40,6 +40,6 @@ readDocFile f = do
         src <- readFile
         close
         readDocString src
-      False => raise "Error"
+      False => raise "Unable to read XML file"
 
 -- --------------------------------------------------------------------- [ EOF ]
