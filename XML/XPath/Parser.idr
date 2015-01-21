@@ -17,6 +17,7 @@ import XML.ParseUtils
 
 %access private
 
+-- -------------------------------------------------------------------- [ Test ]
 nodetest : Parser $ XPath TEST
 nodetest = do string "text()"; pure Text
   <|> do string "comment()"; pure Comment
@@ -26,26 +27,43 @@ nodetest = do string "text()"; pure Text
          pure (Attr w)
   <?> "Node Tests"
 
-node : Parser $ XPath NODE
-node = do
+-- ------------------------------------------------------------------- [ Nodes ]
+
+strnode : Parser $ XPath NODE
+strnode = do
     name <- map pack (some $ satisfy isAlphaNum)
     pure $ Elem name
-  <?> "node"
+  <?> "Named node"
 
-root : Parser $ XPath ROOT
-root = do
+anynode : Parser $ XPath NODE
+anynode = do
+    string "*"
+    pure $ Any
+  <?> "Wildcard"
+
+node : Parser $ XPath NODE
+node = anynode <|> strnode <?> "Nodes"
+
+-- ------------------------------------------------------------------- [ Roots ]
+
+aroot : Parser $ XPath ROOT
+aroot = do
     string "/"
-    name <- map pack (some $ satisfy isAlphaNum)
-    pure $ Root name
-  <?> "root"
+    n <- node
+    pure $ Root n
+  <?> "Absolute root"
 
 droot : Parser $ XPath ROOT
 droot = do
     string "//"
-    name <- map pack (some $ satisfy isAlphaNum)
-    pure $ DRoot name
-  <?> "root"
+    n <- node
+    pure $ DRoot n
+  <?> "Descendent root"
 
+root : Parser $ XPath ROOT
+root = aroot <|> droot <?> "Root"
+
+-- ------------------------------------------------------------------- [ Paths ]
 
 data ParseRes = P (XPath PATH) | N (XPath NODE) | T (XPath TEST)
 
@@ -67,18 +85,6 @@ mutual
         N n  => pure $ r </> n
         T t  => pure $ r </> t
     <?> "Absolute path"
-
-  dabspath : Parser $ XPath PATH
-  dabspath = do
-      r <- droot
-      string "/"
-      pelem <- pathelem
-      case pelem of
-        P p  => pure $ r </> p
-        N n  => pure $ r </> n
-        T t  => pure $ r </> t
-    <?> "Absolute path"
-
 
   anypath : Parser $ XPath PATH
   anypath = do
@@ -103,7 +109,7 @@ mutual
      <?> "Decendent Path"
 
 path : Parser $ XPath PATH
-path = dabspath <|> decpath <|> anypath <|> abspath <?> "Path"
+path = decpath <|> anypath <|> abspath <?> "Path"
 
 public
 parseQuery : Parser $ XPath QUERY

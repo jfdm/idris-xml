@@ -26,13 +26,17 @@ infixl 2 <//>
 data XPath : XPathTy -> Type where
   ||| An XPath Query
   Query : XPath a -> XPath QUERY
+
+  Any  : XPath NODE
   Elem : String -> XPath NODE
-  Attr : String -> XPath TEST
-  Text : XPath TEST
+
+  Attr    : String -> XPath TEST
+  Text    : XPath TEST
   Comment : XPath TEST
-  CData : XPath TEST
-  Root : String -> XPath ROOT
-  DRoot : String -> XPath ROOT
+  CData   : XPath TEST
+
+  Root  : XPath NODE -> XPath ROOT
+  DRoot : XPath NODE -> XPath ROOT
 
   ||| An absolute path
   (</>) : XPath a
@@ -48,12 +52,13 @@ data XPath : XPathTy -> Type where
 instance Show (XPath x) where
   show (Query q) = unwords ["[Query ", show q, "]\n"]
   show (Elem e)  = e
-  show (Root r)  = "/" ++ r
+  show (Any)     = "*"
+  show (Root r)  = "/" ++ show r
+  show (DRoot r) = "//" ++ show r
   show (Attr a)  = "@" ++ a
   show (Text)    = "text()"
   show (Comment) = "comment()"
   show (CData)   = "cdata()"
-  show (DRoot r) = "//" ++ r
   show (p </> c) = show p ++ "/" ++ show c
   show (p <//> c) = show p ++ "//" ++ show c
 

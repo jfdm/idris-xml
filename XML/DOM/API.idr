@@ -347,4 +347,8 @@ getChildElementsByQName qn n = filter (\x => getTag x == qn) (getChildElements n
 getChildElementsByName : String -> Document a -> List $ Document ELEMENT
 getChildElementsByName name n = getChildElementsByQName (mkQName name) n
 
+||| Get All child elements regardless of name.
+getAllChildren : Document a -> List $ Document ELEMENT
+getAllChildren = getElementsBy (\x,y => True) (mkQName "empty")
+
 -- --------------------------------------------------------------------- [ EOF ]
