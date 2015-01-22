@@ -85,14 +85,14 @@ empty = do
 mutual
 
   public
-  nodes : Parser $ Document NODES
-  nodes = map (\x => mkNode x) comment
-     <|> map (\x => mkNode x) cdata
-     <|> map (\x => mkNode x) instruction
-     <|> map (\x => mkNode x) empty
-     <|> map (\x => mkNode x) element
-     <|> map (\x => mkNode x) text
-     <?> "Nodes"
+  nodes : Parser $ Document NODE
+  nodes = map (\n => Node n) comment
+      <|> map (\n => Node n) cdata
+      <|> map (\n => Node n) instruction
+      <|> map (\n => Node n) empty
+      <|> map (\n => Node n) element
+      <|> map (\n => Node n) text
+      <?> "Nodes"
 
   element : Parser $ Document ELEMENT
   element = do
@@ -100,8 +100,7 @@ mutual
       token ">" $!> do
         ns <- some nodes
         elemEnd $ trim n
-        let children = foldNodes ns
-        pure $ Element qn as children
+        pure $ Element qn as ns
      <?> "Element"
 
 isStandalone : Parser Bool

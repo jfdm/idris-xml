@@ -20,7 +20,13 @@ createXMLInfoDefault = MkXMLInfo "1.2" "UTF-8" True
 createXMLInfo : String -> String -> Bool -> XMLInfo
 createXMLInfo v e a = MkXMLInfo v e a
 
+mkNodeList : List (Document a)
+           -> {default IsOK p : ValidNode a}
+           -> List $ Document NODE
+mkNodeList Nil = Nil
+mkNodeList xs = map (\x => Node x) xs
 
+{-
 mkNode : (Document a) -> {default IsOK  p : ValidNode a}-> Document NODES
 mkNode n = [n]
 
@@ -54,5 +60,5 @@ instance Semigroup (Document NODES) where
 
 instance Monoid (Document NODES) where
   neutral = []
-
+-}
 -- --------------------------------------------------------------------- [ EOF ]

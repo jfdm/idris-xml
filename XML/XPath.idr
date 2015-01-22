@@ -10,7 +10,7 @@ import XML.XPath.Parser
 -- ------------------------------------------------------------------- [ Query ]
 
 private
-evaluatePath : XPath a -> Document ELEMENT -> Document NODES
+evaluatePath : XPath a -> Document ELEMENT -> List $ Document NODE
 evaluatePath (Query q) n = evaluatePath q n
 evaluatePath (Elem e)  n = mkNodeList $ (getChildElementsByName e n)
 evaluatePath (Any)     n = mkNodeList $ getChildElements n
@@ -21,8 +21,8 @@ evaluatePath (CData)   n = mkNodeList (getCData $ getNodes n)
 evaluatePath (Text)    n = mkNodeList (getText $ getNodes n)
 evaluatePath (Comment) n = mkNodeList (getComments $ getNodes n)
 evaluatePath (Root r)  n with (r)
-    | Any    = [n]
-    | Elem e = if getTagName n == e then [n] else Nil
+    | Any    = [Node n]
+    | Elem e = if getTagName n == e then [Node n] else Nil
 evaluatePath (DRoot r) n with (r)
     | Any    = mkNodeList $ getAllChildren n
     | Elem e = mkNodeList $ getElementsByName e n
@@ -36,12 +36,12 @@ evaluatePath (p <//> child) n with (child)
 
 query : String
       -> Document DOCUMENT
-      -> Either String (Document NODES)
+      -> Either String (List $ Document NODE)
 query qstr (MkDocument _ _ _ _ e) = case parse parseQuery qstr of
   Left err => Left err
   Right q  => Right $ evaluatePath q e
 
-query' : Document DOCUMENT -> String -> Either String (Document NODES)
+query' : Document DOCUMENT -> String -> Either String (List $ Document NODE)
 query' d q = query q d
 
 -- --------------------------------------------------------------------- [ EOF ]

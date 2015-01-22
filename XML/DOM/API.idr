@@ -112,20 +112,20 @@ mkAttributePrefix k p v = (mkQNamePrefix k p, v)
 -- ----------------------------------------------------------- [ Node Creation ]
 
 ||| Create an XML Comment
-mkCommentNode : String -> Document COMMENT
-mkCommentNode txt = Comment txt
+mkCommentNode : String -> Document NODE
+mkCommentNode txt = Node $ Comment txt
 
-mkCData : String -> Document CDATA
-mkCData txt = CData txt
+mkCData : String -> Document NODE
+mkCData txt = Node $ CData txt
 
-mkTextNode : String -> Document TEXT
-mkTextNode txt = Text txt
+mkTextNode : String -> Document NODE
+mkTextNode txt = Node $ Text txt
 
-mkInstructNode : String -> List (String, String) -> Document INSTRUCTION
-mkInstructNode t d = Instruction t d
+mkInstructNode : String -> List (String, String) -> Document NODE
+mkInstructNode t d = Node $ Instruction t d
 
-mkElementNode : String -> Document ELEMENT
-mkElementNode s = mkSimpleElement s
+mkElementNode : String -> Document NODE
+mkElementNode s = Node $ mkSimpleElement s
 
 -- -------------------------------------------------------------- [ Attributes ]
 
@@ -149,18 +149,18 @@ appendToNode : Document a
            -> Document ELEMENT
            -> (prf : ValidNode a)
            -> Document ELEMENT
-appendToNode c (Element n as ns) prf = Element n as $ (::) {prf = prf} c ns
+appendToNode c (Element n as ns) prf = Element n as (Node {prf=prf} c :: ns)
 
 private
 removeFromNode : Document a
                -> Document ELEMENT
                -> (prf : ValidNode a)
                -> Document ELEMENT
-removeFromNode c (Element n as ns) prf = Element n as (delete {p=prf} c ns)
+removeFromNode c (Element n as ns) prf = Element n as (delete (Node {prf=prf} c) ns)
 
 ||| Set Value
 addText : String -> Document ELEMENT -> Document ELEMENT
-addText s e = appendToNode (mkTextNode s) e IsOK
+addText s e = appendToNode (Text s) e IsOK
 
 --  -------------------------------------------------------------------- [ Ops ]
 
@@ -179,7 +179,7 @@ addText s e = appendToNode (mkTextNode s) e IsOK
 
 ||| Add text value
 (<=>) : Document ELEMENT -> String -> Document ELEMENT
-(<=>) e s = e <++> (mkTextNode s)
+(<=>) e s = e <++> (Text s)
 
 ||| Create and add text value
 (<+=>) : String -> String -> Document ELEMENT
@@ -188,6 +188,7 @@ addText s e = appendToNode (mkTextNode s) e IsOK
 -- --------------------------------------------------------------- [ Accessors ]
 ||| Get the attributes of the node
 getAttributes : Document a -> List (QName, String)
+getAttributes (Node n)         = getAttributes n
 getAttributes (Element _ as _) = as
 getAttributes _                = Nil
 
@@ -196,7 +197,8 @@ hasAttributes : Document a -> Bool
 hasAttributes n = isCons (getAttributes n)
 
 ||| Get the children
-getNodes : Document a -> Document NODES
+getNodes : Document a -> List $ Document NODE
+getNodes (Node n)         = getNodes n
 getNodes (Element _ _ ns) = ns
 getNodes _                = Nil
 
@@ -207,6 +209,7 @@ hasNodes n = isCons $ getNodes n
 ||| Get node name
 ||| http://docs.oracle.com/javase/7/docs/api/org/w3c/dom/Node.html
 getNodeName : Document a -> Maybe String
+getNodeName (Node n)           = getNodeName n
 getNodeName (CData _)          = Just $ "#cdata-section"
 getNodeName (Comment  _)       = Just $ "#comment"
 getNodeName (Instruction i _)  = Just $ i
@@ -216,6 +219,7 @@ getNodeName _                  = Nothing
 
 ||| Return the element's value
 getNodeValue : Document a -> Maybe String
+getNodeValue (Node n)          = getNodeValue n
 getNodeValue (CData d)         = Just d
 getNodeValue (Comment c)       = Just c
 getNodeValue (Instruction _ d) = Just $ concatMap show d
@@ -262,43 +266,30 @@ setAttribute k v (Element n as ns) = Element n attrs' ns
     attrs' = mkAttribute k v :: (deleteBy (\(x,y), (a,b) => name x== name a )
                                           (mkQName k, "") (as))
 
-
-
 -- ------------------------------------------------------------ [ Node Queries ]
-{-- Attempts at making dry.
-getElementsByType : {ty : NodeTy} -> NodeTy -> Document NODES -> List $ Document ty
-getElementsByType _  Nil     = Nil
-getElementsByType ty (x::xs) = if getDocElemTy x == ty
-    then x :: getElementsByType ty xs
-    else getElementsByType ty xs
-
-getChildrenBy : {ty : NodeTy} -> NodeTy -> Document a -> List $ Document ty
-getChildrenBy ty (Element _ _ ns) = getElementsByType ty ns
-getChildrenBy _  _                = Nil
--}
 
 ||| getElements
-getElements : Document NODES -> List $ Document ELEMENT
+getElements : List $ Document NODE -> List $ Document ELEMENT
 getElements Nil     = Nil
-getElements (x::xs) with (x)
+getElements (Node x::xs) with (x)
     | (Element _ _ _) = x :: getElements xs
     | otherwise       = getElements xs
 
-getText : Document NODES -> List $ Document TEXT
+getText : List $ Document NODE -> List $ Document TEXT
 getText Nil = Nil
-getText (x::xs) with (x)
+getText (Node x::xs) with (x)
     | (Text t)  = x :: getText xs
     | otherwise = getText xs
 
-getComments : Document NODES -> List $ Document COMMENT
+getComments : List $ Document NODE -> List $ Document COMMENT
 getComments Nil = Nil
-getComments (x::xs) with (x)
+getComments (Node x::xs) with (x)
     | (Comment t)  = x :: getComments xs
     | otherwise = getComments xs
 
-getCData : Document NODES -> List $ Document CDATA
+getCData : List $ Document NODE -> List $ Document CDATA
 getCData Nil = Nil
-getCData (x::xs) with (x)
+getCData (Node x::xs) with (x)
     | (CData t)  = x :: getCData xs
     | otherwise = getCData xs
 

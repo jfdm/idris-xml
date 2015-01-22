@@ -32,7 +32,7 @@ data DocType : Type where
 
 -- ------------------------------------------------------------------- [ Nodes ]
 
-data NodeTy = DOCUMENT | ELEMENT | TEXT | CDATA | INSTRUCTION | COMMENT | NODES
+data NodeTy = DOCUMENT | ELEMENT | TEXT | CDATA | INSTRUCTION | COMMENT | NODE
 
 data ValidNode : NodeTy -> Type where
   ValidElem  : ValidNode ELEMENT
@@ -52,14 +52,13 @@ data Document : NodeTy -> Type where
              -> Document DOCUMENT
   Element : QName
           -> List (QName, String)
-          -> Document NODES
+          -> List (Document NODE)
           -> Document ELEMENT
   Comment : String -> Document COMMENT
   Text : String -> Document TEXT
   CData : String -> Document CDATA
   Instruction : String -> List (String, String) -> Document INSTRUCTION
-  Nil : Document NODES
-  (::) : Document a -> { default tactics {search 100; } prf : ValidNode a} -> Document NODES -> Document NODES
+  Node : Document ty -> {auto prf : ValidNode ty} -> Document NODE
 
 getDocElemTy : {a : NodeTy} -> Document a -> NodeTy
 getDocElemTy {a} _ = a

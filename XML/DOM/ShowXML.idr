@@ -20,10 +20,9 @@ instance [xml] Show (Document x) where
   show (MkDocument info dtype ins doc es) = unwords [show @{xml} es]
   show (Element naam as ns) = unwords [
           "<" ++ show @{xmlQName} naam ++ concatMap (show @{xmlKV}) as ++ ">",
-          show @{xml} ns,
+          unwords $ map (show @{xml}) ns,
           "</"++ show @{xmlQName} naam ++ ">\n"]
-  show Nil               = ""
-  show (x::xs)           = show @{xml} x ++ show @{xml} xs
+  show (Node n)          = show @{xml} n
   show (Comment str)     = unwords ["<!-- ", show str, "-->\n"]
   show (Text txt)        = txt
   show (CData txt)       = unwords ["<![CData[\n", show txt, "\n]]>\n"]

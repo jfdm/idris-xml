@@ -36,8 +36,7 @@ instance Show (Document x) where
   show (MkDocument info dtype ins doc es) = unwords ["[Document ",
                    show info, show dtype, show ins, show doc, show es,"]\n"]
   show (Element naam as ns) = unwords ["[Element ", show naam, show as, show ns, "]\n"]
-  show Nil                  = ""
-  show (x::xs)              = show x ++ "," ++ show xs
+  show (Node n)             = show n
   show (Comment str)        = unwords ["[Comment ", show str, "]\n"]
   show (Text txt)           = unwords ["[Text ", show txt, "]\n"]
   show (CData txt)          = unwords ["[CData ", show txt, "]\n"]

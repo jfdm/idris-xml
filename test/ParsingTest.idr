@@ -36,7 +36,7 @@ parseTestGood p s = case parse p s of
 ||| Expect a test to fail
 parseTestBad : Parser a -> String -> IO ()
 parseTestBad p s = case parse p s of
-    Left err => putStrLn "Test Failed"
+    Left err => putStrLn "Test Failed as Expected"
     Right re => putStrLn "-------> Expected failing test passed..."
 
 

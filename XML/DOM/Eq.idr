@@ -29,7 +29,7 @@ instance Eq NodeTy where
   (==) CDATA       CDATA       = True
   (==) INSTRUCTION INSTRUCTION = True
   (==) COMMENT     COMMENT     = True
-  (==) NODES       NODES       = True
+  (==) NODE        NODE        = True
   (==) _          _            = False
 
 mutual
@@ -41,8 +41,7 @@ mutual
   eqDoc (Text a)            (Text b)            = a == b
   eqDoc (CData a)           (CData b)           = a == b
   eqDoc (Instruction at ad) (Instruction bt bd) = at == bt && ad == bd
-  eqDoc Nil                 Nil                 = True
-  eqDoc (x::xs)             (y::ys)             = eqDoc x y && eqDoc xs ys
+  eqDoc (Node a)            (Node b)            = eqDoc a b
   eqDoc _                   _                   = False
 
   --- Eq on liss of nodes is removed.
