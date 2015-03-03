@@ -74,7 +74,7 @@ url = map pack (some pathChar) <?> "URL"
 
 
 allowedChar : Parser Char
-allowedChar = reservedChar <|> urlChar <|> satisfy isAlphaNum <?> "Reserved Char"
+allowedChar = urlChar <|> satisfy isAlphaNum <|> reservedChar <?> "Reserved Char"
 
 ||| Parse XML Words
 xmlWord : Parser String
@@ -98,19 +98,19 @@ manyTill p end = scan
 
 -- ---------------------------------------------------------------- [ KV Pairs ]
 expValue : String -> Parser ()
-expValue s = skip $ dquote $ string s <$ space
+expValue s = skip $ dquote $ string s <* space
 
 genKVPair : Parser a -> Parser b -> Parser (a, b)
 genKVPair key value = do
     k <- key
     equals
-    v <- value <$ space
+    v <- value <* space
     pure (k,v)
   <?> "KV Pair Impl"
 
 keyvalue : Parser (String, String)
 keyvalue = do
-    (k,v) <- genKVPair (word <$ space) (literallyBetween '\"')
+    (k,v) <- genKVPair (word <* space) (literallyBetween '\"')
     pure (k, v)
   <?> "String KV Pair"
 

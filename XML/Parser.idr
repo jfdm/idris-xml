@@ -19,7 +19,7 @@ import Debug.Trace
 -- ------------------------------------------------------------------- [ Utils ]
 qname : Parser (String, QName)
 qname = do
-    pre <- opt $ (word <$ colon)
+    pre <- opt $ (word <* colon)
     name <- word
     space
     let pr = case pre of
@@ -45,27 +45,27 @@ elemStart = do
   <?> "Start Tag"
 
 elemEnd : String -> Parser ()
-elemEnd s = angles (token "/" $!> token s) <?> "End Tag"
+elemEnd s = angles (token "/" *!> token s) <?> "End Tag"
 
 -- ------------------------------------------------------------------- [ Nodes ]
 comment : Parser $ Document COMMENT
 comment = token ("<!--") >! do
-    cs <- map pack $ manyTill (anyChar) (space $> token "-->")
+    cs <- map pack $ manyTill (anyChar) (space *> token "-->")
     pure $ Comment cs
   <?> "Comment"
 
 instruction : Parser $ Document INSTRUCTION
 instruction = token "<?" >! do
-    itarget <- word <$ space
-    idata  <- some $ genKVPair (word <$ space) (dquote url)
+    itarget <- word <* space
+    idata  <- some $ genKVPair (word <* space) (dquote url)
     token "?>"
     pure $ Instruction itarget idata
   <?> "Instruction"
 
 text : Parser $ (Document TEXT)
 text = do
-    txt <- some (xmlWord <$ space)
-    pure $ Text $ unwords txt
+    txt <- some (xmlWord <* space)
+    pure $ Text $ unwords (trace (show txt) txt)
   <?> "Text Node"
 
 cdata : Parser $ (Document CDATA)
@@ -77,7 +77,7 @@ cdata = do
 
 empty : Parser $ (Document ELEMENT)
 empty = do
-    (_, qn, as) <- elemStart <$ space
+    (_, qn, as) <- elemStart <* space
     token "/>" >! do
       pure $ Element qn as Nil
   <?> "Empty Node"
@@ -96,27 +96,27 @@ mutual
 
   element : Parser $ Document ELEMENT
   element = do
-      (n, qn, as) <- elemStart <$ space
-      token ">" $!> do
+      (n, qn, as) <- elemStart <* space
+      token ">" *!> do
         ns <- some nodes
         elemEnd $ trim n
         pure $ Element qn as ns
      <?> "Element"
 
 isStandalone : Parser Bool
-isStandalone = (expValue "yes" $> return True)
-           <|> (expValue "true" $> return True) <?> "Expected Standalone"
+isStandalone = (expValue "yes" *> return True)
+           <|> (expValue "true" *> return True) <?> "Expected Standalone"
 
 notStandalone : Parser Bool
-notStandalone = (expValue "no" $> return False)
-           <|> (expValue "false" $> return False) <?> "Expected not Standalone"
+notStandalone = (expValue "no" *> return False)
+           <|> (expValue "false" *> return False) <?> "Expected not Standalone"
 
 public
 xmlinfo : Parser XMLInfo
-xmlinfo = token "<?xml" $!> do
-    vers <- keyvalue' "version" $ literallyBetween '\"' <$ space
-    enc  <- opt $ keyvalue' "encoding" $ literallyBetween '\"' <$ space
-    alone <- opt $ keyvalue' "standalone" standalone <$ space
+xmlinfo = token "<?xml" *!> do
+    vers <- keyvalue' "version" $ literallyBetween '\"' <* space
+    enc  <- opt $ keyvalue' "encoding" $ literallyBetween '\"' <* space
+    alone <- opt $ keyvalue' "standalone" standalone <* space
     token "?>"
     pure $ MkXMLInfo vers (fromMaybe "UTF-8" enc) (fromMaybe True alone)
    <?> "XML Info"
@@ -127,15 +127,15 @@ xmlinfo = token "<?xml" $!> do
 pubident : Parser ExternalID
 pubident = do
     token "PUBLIC" >! do
-      loc <- literallyBetween '\"' <$ space
-      loc' <- literallyBetween '\"' <$ space
+      loc <- literallyBetween '\"' <* space
+      loc' <- literallyBetween '\"' <* space
       pure $ PublicID loc loc'
   <?> "Public identifer"
 
 sysident : Parser ExternalID
 sysident = do
     token "SYSTEM" >! do
-      loc <- literallyBetween '\"' <$ space
+      loc <- literallyBetween '\"' <* space
       pure $ SystemID loc
   <?> "System Identifier"
 
@@ -150,18 +150,18 @@ doctype = angles body <?> "DocType"
     body : Parser $ DocType
     body = do
         token "!DOCTYPE" >! do
-          v <- word <$ space
-          id <- opt ident <$ space
+          v <- word <* space
+          id <- opt ident <* space
           pure $ MkDocType v id
       <?> "DocType Body"
 
 public
 parseXML : Parser $ Document DOCUMENT
 parseXML = do
-    info <- xmlinfo <$ space
-    dtype <- opt doctype <$ space
-    is <- many instruction <$ space
-    doc <- opt comment <$ space
+    info <- xmlinfo <* space
+    dtype <- opt doctype <* space
+    is <- many instruction <* space
+    doc <- opt comment <* space
     root <- element -- Add check if docttype exists for name of root element
     pure $ MkDocument info dtype is doc root
   <?> "XML DOcument"

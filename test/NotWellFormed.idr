@@ -20,7 +20,7 @@ tests1 = do
   parseTestBad (parseXML) "<?xml version=\"1.0\" valid=\"no\" ?> <doc></doc>"
   parseTestBad (parseXML) "<?xml version=\"1.0\" standalone=\"YES\" ?> <doc></doc>"
   parseTestBad (parseXML) "<?xml version=\"1.0\" encoding=\" UTF-8\"?> <doc></doc>"
---  parseTestBad (parseXML) "<?xml version=\"1.0 \" ?> <doc></doc>"
+  parseTestBad (parseXML) "<?xml version=\"1.0 \" ?> <doc></doc>"
   parseTestBad (parseXML) "<?xml version=\"1.0\"?> <doc></doc>"
   parseTestBad (parseXML) "<?xml encoding=\"UTF-8\"?> <doc></doc>"
   parseTestBad (parseXML) "<?XML version=\"1.0\"?> <doc></doc>"
