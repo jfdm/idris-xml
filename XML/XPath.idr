@@ -34,14 +34,20 @@ evaluatePath (p <//> child) n with (child)
 -- ------------------------------------------------------------------ [ Parser ]
 
 
-query : String
+queryDoc : String
       -> Document DOCUMENT
       -> Either String (List $ Document NODE)
-query qstr (MkDocument _ _ _ _ e) = case parse parseQuery qstr of
+queryDoc qstr (MkDocument _ _ _ _ e) = case parse parseQuery qstr of
   Left err => Left err
   Right q  => Right $ evaluatePath q e
 
-query' : Document DOCUMENT -> String -> Either String (List $ Document NODE)
-query' d q = query q d
+queryDoc' : Document DOCUMENT -> String -> Either String (List $ Document NODE)
+queryDoc' d q = queryDoc q d
 
+queryElem : String
+         -> Document ELEMENT
+         -> Either String (List $ Document NODE)
+queryElem qstr e = case parse parseQuery qstr of
+  Left err => Left err
+  Right q  => Right $ evaluatePath q e
 -- --------------------------------------------------------------------- [ EOF ]

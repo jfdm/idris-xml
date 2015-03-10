@@ -6,11 +6,17 @@ import Effect.Exception
 
 import XML.XPath
 
-xQuery : String
-       -> Document DOCUMENT
-       -> {[EXCEPTION String]} Eff (List (Document NODE))
-xQuery q d = case query q d of
+queryDocE : String
+         -> Document DOCUMENT
+         -> {[EXCEPTION String]} Eff (List $ Document NODE)
+queryDocE q d = case queryDoc d of
   Left err  => raise err
   Right res => pure res
 
+queryElemE : String
+          -> Document ELEMENT
+          -> {[EXCEPTION String]} Eff (List $ Document NODE)
+queryElemE q e = case queryElem q e of
+   Left err  => raise err
+   Right res => pure res
 -- --------------------------------------------------------------------- [ EOF ]
