@@ -33,7 +33,7 @@ evaluatePath (p <//> child) n with (child)
     | path   = concatMap (evaluatePath path) $ getElements (evaluatePath p n)
 -- ------------------------------------------------------------------ [ Parser ]
 
-
+public
 queryDoc : String
       -> Document DOCUMENT
       -> Either String (List $ Document NODE)
@@ -41,9 +41,11 @@ queryDoc qstr (MkDocument _ _ _ _ e) = case parse parseQuery qstr of
   Left err => Left err
   Right q  => Right $ evaluatePath q e
 
+public
 queryDoc' : Document DOCUMENT -> String -> Either String (List $ Document NODE)
 queryDoc' d q = queryDoc q d
 
+public
 queryElem : String
          -> Document ELEMENT
          -> Either String (List $ Document NODE)

@@ -6,13 +6,12 @@ import Effect.Exception
 
 import XML.DOM
 
-
 getAttributeE : String
              -> Document ELEMENT
              -> {[EXCEPTION String]} Eff String
 getAttributeE id n = case getAttribute id n of
   Just res => pure res
-  Nothing  => raise "Element not found"
+  Nothing  => raise $ "Element does not have: " ++ id
 
 
 -- --------------------------------------------------------------------- [ EOF ]
