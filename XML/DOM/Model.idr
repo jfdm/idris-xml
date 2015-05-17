@@ -9,15 +9,18 @@ module XML.DOM.Model
 
 -- ------------------------------------------------------------------ [ QNames ]
 
-record QName : Type where
-  MkQName : (name : String)
-          -> (nspace : Maybe String)
-          -> (nprefix : Maybe String)
-          -> QName
+record QName where
+  constructor MkQName
+  name : String
+  nspace : Maybe String
+  nprefix : Maybe String
 
 -- ---------------------------------------------------------------- [ XML Info ]
-record XMLInfo : Type where
-  MkXMLInfo : (version : String) -> (encoding : String) -> (standalone : Bool) -> XMLInfo
+record XMLInfo where
+  constructor MkXMLInfo
+  version : String
+  encoding : String
+  standalone : Bool
 
 -- --------------------------------------------------------------- [ Doc Types ]
 
