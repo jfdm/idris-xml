@@ -15,7 +15,7 @@ import Lightyear.Strings
 
 -- -------------------------------------------------------------- [ Characters ]
 eol : Parser ()
-eol = char '\n' <?> "EOL"
+eol = char '\n' *> return () <?> "EOL"
 
 anyChar : Parser Char
 anyChar = satisfy (const True) <?> "Any Char"
