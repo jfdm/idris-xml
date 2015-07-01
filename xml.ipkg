@@ -1,6 +1,6 @@
 package xml
 
-opts = "-p effects -p lightyear"
+opts = "-p effects -p lightyear --typeintype"
 
 modules = XML.DOM
         , XML.DOM.Model
