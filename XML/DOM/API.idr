@@ -252,6 +252,7 @@ getAttribute key e = lookupBy (\x,y => name x == name y)
 removeAttribute : String -> Document ELEMENT -> Document ELEMENT
 removeAttribute key (Element n as ns) = Element n (attrs') ns
   where
+    attrs' : List (QName, String)
     attrs' = deleteBy (\(x,y), (a,b) => name x== name a )
                       (mkQName key, "")
                       (as)
@@ -261,10 +262,10 @@ setAttribute : (key : String)
              -> (value : String)
              -> Document ELEMENT
              -> Document ELEMENT
-setAttribute k v (Element n as ns) = Element n attrs' ns
+setAttribute k v e@(Element n as ns) = Element n (newAS e) ns
   where
-    attrs' = mkAttribute k v :: (deleteBy (\(x,y), (a,b) => name x== name a )
-                                          (mkQName k, "") (as))
+    newAS : Document ELEMENT -> List (QName, String)
+    newAS e = mkAttribute k v :: getAttributes (removeAttribute k e)
 
 -- ------------------------------------------------------------ [ Node Queries ]
 

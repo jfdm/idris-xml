@@ -13,5 +13,4 @@ getAttributeE id n = case getAttribute id n of
   Just res => pure res
   Nothing  => raise $ "Element does not have: " ++ id
 
-
 -- --------------------------------------------------------------------- [ EOF ]
