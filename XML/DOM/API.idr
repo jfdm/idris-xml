@@ -301,26 +301,39 @@ getChildElements (Element _ _ ns) = getElements ns
 getChildElements _                = Nil
 
 -- --------------------------------------------------------- [ Element Queries ]
-mutual
-  private
-  func : (QName -> QName -> Bool)
-       -> QName
-       -> List $ Document ELEMENT
-       -> List $ Document ELEMENT
-  func _ _ Nil     = Nil
-  func f n (x::xs) = getElementsBy f n x ++ func f n xs
 
-  ||| Get all Elements with a name.
-  getElementsBy : (QName -> QName -> Bool)
-                -> QName
-                -> Document a
-                -> List $ Document ELEMENT
-  getElementsBy eq qn e with (e)
-     | (MkDocument _ _ _ _ r) = getElementsBy eq qn r
-     | (Element _ _ _) = if eq (getTag e) qn
-         then [e] ++ func eq qn (getChildElements e)
-         else func eq qn (getChildElements e)
-     | otherwise = Nil
+private
+getEElementsBy : (QName -> QName -> Bool)
+              -> QName
+              -> Document ELEMENT
+              -> List $ Document ELEMENT
+getEElementsBy eq qn e@(Element n as Nil) = if eq n qn then [e] else Nil
+getEElementsBy eq qn e@(Element n as cs)  =
+      if eq n qn
+         then [e] ++ rest e
+         else rest e
+    where
+      %assert_total
+      rest : Document ELEMENT -> List (Document ELEMENT)
+      rest (Element _ _ Nil) = Nil
+      rest (Element _ _ cs)  = foldl (\ns,i => getEElementsBy eq qn i ++ ns) Nil (getElements cs)
+
+private
+getDocElementsBy : (QName -> QName -> Bool)
+              -> QName
+              -> Document DOCUMENT
+              -> List $ Document ELEMENT
+getDocElementsBy eq qn (MkDocument _ _ _ _ r) = getEElementsBy eq qn r
+
+
+||| Get all Elements with a name.
+getElementsBy : (QName -> QName -> Bool)
+              -> QName
+              -> Document a
+              -> List $ Document ELEMENT
+getElementsBy {a=DOCUMENT} eq qn d = getDocElementsBy eq qn d
+getElementsBy {a=ELEMENT}  eq qn e = getEElementsBy eq qn e
+getElementsBy              eq qn _ = Nil
 
 ||| Get all Elements with a given QName
 getElementsByQName : QName  -> Document a -> List $ Document ELEMENT

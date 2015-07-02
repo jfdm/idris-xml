@@ -1,6 +1,6 @@
 package xml
 
-opts = "-p effects -p lightyear --typeintype"
+opts = "-p effects -p lightyear --typeintype --warnreach"
 
 modules = XML.DOM
         , XML.DOM.Model
