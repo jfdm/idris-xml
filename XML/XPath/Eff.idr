@@ -4,6 +4,7 @@ module XML.XPath.Eff
 import Effects
 import Effect.Exception
 
+import XML.DOM
 import XML.XPath
 
 queryDocE : String
