@@ -11,7 +11,7 @@ module XML.DOM.Utils
 import XML.DOM.Model
 import XML.DOM.Eq
 
-setRoot : Document ELEMENT -> Document a -> Document DOCUMENT
+setRoot : Document ELEMENT -> Document DOCUMENT -> Document DOCUMENT
 setRoot newe (MkDocument info dtype ins doc e) = MkDocument info dtype ins doc newe
 
 createXMLInfoDefault : XMLInfo
