@@ -13,8 +13,6 @@ import Lightyear.Strings
 import XML.DOM
 import XML.ParseUtils
 
-import Debug.Trace
-
 %access private
 
 -- ------------------------------------------------------------------- [ Utils ]
@@ -66,7 +64,7 @@ instruction = token "<?" >! do
 text : Parser $ (Document TEXT)
 text = do
     txt <- some (xmlWord <* space)
-    pure $ Text $ unwords (trace (show txt) txt)
+    pure $ Text $ unwords txt
   <?> "Text Node"
 
 cdata : Parser $ (Document CDATA)
