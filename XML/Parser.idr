@@ -157,8 +157,12 @@ doctype = angles body <?> "DocType"
       <?> "DocType Body"
 
 public
-parseXML : Parser $ Document DOCUMENT
-parseXML = do
+parseXMLSnippet : Parser $ Document ELEMENT
+parseXMLSnippet = element <?> "XML Element"
+
+public
+parseXMLDoc : Parser $ Document DOCUMENT
+parseXMLDoc = do
     info <- xmlinfo <* space
     dtype <- opt doctype <* space
     is <- many instruction <* space

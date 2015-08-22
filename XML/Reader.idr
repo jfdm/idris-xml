@@ -13,9 +13,21 @@ import Effect.File
 import Effect.Exception
 
 import XML.DOM
-import public XML.Parser
+import XML.Parser
 
 %access private
+
+public
+data XMLError : Type where
+  FileParseError : String -> String -> XMLError
+  CannotReadFile : String -> XMLError
+
+instance Show XMLError where
+  show (FileParseError fn err) =
+    unlines [ unwords ["Error parsing file", show fn, "error was"]
+            , err]
+  show (CannotReadFile fn) = unwords ["Cannot read file:", show fn]
+
 
 readFile : { [FILE_IO (OpenFile Read)] } Eff String
 readFile = readAcc ""
@@ -25,21 +37,48 @@ readFile = readAcc ""
                      then readAcc (acc ++ !readLine)
                      else pure acc
 
-public
-readDocString : String -> {[EXCEPTION String]} Eff (Document DOCUMENT)
-readDocString str = do
-  case parse parseXML str of
-    Left err  => raise err
-    Right res => pure $ res
+namespace Doc
+  public
+  fromString : String -> Either String (Document DOCUMENT)
+  fromString str = do
+    case parse parseXMLDoc str of
+      Left err  => Left $ err
+      Right res => pure $ res
 
-public
-readDocFile : String -> { [EXCEPTION String, FILE_IO ()] } Eff (Document DOCUMENT)
-readDocFile f = do
-    case !(open f Read) of
-      True => do
-        src <- readFile
-        close
-        readDocString src
-      False => raise "Unable to read XML file"
+  public
+  readXMLDoc : String
+             -> Eff (Either XMLError (Document DOCUMENT))
+                    [FILE_IO ()]
+  readXMLDoc f = do
+      case !(open f Read) of
+        True => do
+          src <- readFile
+          close
+          case Doc.fromString src of
+            Left err  => pure $ Left (FileParseError f err)
+            Right res => pure $ Right res
+        False => pure $ Left (CannotReadFile "Unable to read XML file")
+
+namespace Snippet
+  public
+  fromString : String -> Either String (Document ELEMENT)
+  fromString str = do
+    case parse parseXMLSnippet str of
+      Left err  => Left $ err
+      Right res => pure $ res
+
+  public
+  readXMLSnippet : String
+                -> Eff (Either XMLError (Document ELEMENT))
+                       [FILE_IO ()]
+  readXMLSnippet f = do
+      case !(open f Read) of
+        True => do
+          src <- readFile
+          close
+          case Snippet.fromString src of
+            Left err  => pure $ Left (FileParseError f err)
+            Right res => pure $ Right res
+        False => pure $ Left (CannotReadFile "Unable to read XML file")
 
 -- --------------------------------------------------------------------- [ EOF ]

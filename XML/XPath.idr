@@ -7,6 +7,16 @@ import XML.XPath.Parser
 
 %access public
 
+-- ------------------------------------------------------------------- [ ERROR ]
+
+data XPathError : Type where
+  MalformedQuery : String -> String -> XPathError
+
+instance Show XPathError where
+  show (MalformedQuery q err) =
+    unlines [ unwords ["Query:", show q, "is malformed because"]
+            , err]
+
 -- ------------------------------------------------------------------- [ Query ]
 
 private
@@ -36,20 +46,22 @@ evaluatePath (p <//> child) n with (child)
 public
 queryDoc : String
       -> Document DOCUMENT
-      -> Either String (List $ Document NODE)
-queryDoc qstr (MkDocument _ _ _ _ e) = case parse parseQuery qstr of
-  Left err => Left err
-  Right q  => Right $ evaluatePath q e
+      -> Either XPathError (List $ Document NODE)
+queryDoc qstr (MkDocument _ _ _ _ e) =
+  case parse parseQuery qstr of
+    Left err => Left $ MalformedQuery qstr err
+    Right q  => Right $ evaluatePath q e
 
 public
-queryDoc' : Document DOCUMENT -> String -> Either String (List $ Document NODE)
+queryDoc' : Document DOCUMENT -> String
+          -> Either XPathError (List $ Document NODE)
 queryDoc' d q = queryDoc q d
 
 public
 queryElem : String
          -> Document ELEMENT
-         -> Either String (List $ Document NODE)
+         -> Either XPathError (List $ Document NODE)
 queryElem qstr e = case parse parseQuery qstr of
-  Left err => Left err
+  Left err => Left $ MalformedQuery qstr err
   Right q  => Right $ evaluatePath q e
 -- --------------------------------------------------------------------- [ EOF ]

@@ -2,14 +2,14 @@ package xml
 
 opts = "-p effects -p lightyear --typeintype --warnreach"
 
-modules = XML.DOM
-        , XML.DOM.Model
+modules = XML.DOM.Model
         , XML.DOM.Show
         , XML.DOM.ShowXML
         , XML.DOM.Eq
         , XML.DOM.API
         , XML.DOM.Utils
         , XML.DOM.Eff
+        , XML.DOM
 
         , XML.Reader
         , XML.ParseUtils
