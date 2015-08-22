@@ -45,19 +45,19 @@ namespace Doc
       Left err  => Left $ err
       Right res => pure $ res
 
-  public
-  readXMLDoc : String
-             -> Eff (Either XMLError (Document DOCUMENT))
-                    [FILE_IO ()]
-  readXMLDoc f = do
-      case !(open f Read) of
-        True => do
-          src <- readFile
-          close
-          case Doc.fromString src of
-            Left err  => pure $ Left (FileParseError f err)
-            Right res => pure $ Right res
-        False => pure $ Left (CannotReadFile "Unable to read XML file")
+public
+readXMLDoc : String
+           -> Eff (Either XMLError (Document DOCUMENT))
+                  [FILE_IO ()]
+readXMLDoc f = do
+    case !(open f Read) of
+      True => do
+        src <- readFile
+        close
+        case Doc.fromString src of
+          Left err  => pure $ Left (FileParseError f err)
+          Right res => pure $ Right res
+      False => pure $ Left (CannotReadFile "Unable to read XML file")
 
 namespace Snippet
   public
@@ -67,18 +67,18 @@ namespace Snippet
       Left err  => Left $ err
       Right res => pure $ res
 
-  public
-  readXMLSnippet : String
-                -> Eff (Either XMLError (Document ELEMENT))
-                       [FILE_IO ()]
-  readXMLSnippet f = do
-      case !(open f Read) of
-        True => do
-          src <- readFile
-          close
-          case Snippet.fromString src of
-            Left err  => pure $ Left (FileParseError f err)
-            Right res => pure $ Right res
-        False => pure $ Left (CannotReadFile "Unable to read XML file")
+public
+readXMLSnippet : String
+              -> Eff (Either XMLError (Document ELEMENT))
+                     [FILE_IO ()]
+readXMLSnippet f = do
+    case !(open f Read) of
+      True => do
+        src <- readFile
+        close
+        case Snippet.fromString src of
+          Left err  => pure $ Left (FileParseError f err)
+          Right res => pure $ Right res
+      False => pure $ Left (CannotReadFile "Unable to read XML file")
 
 -- --------------------------------------------------------------------- [ EOF ]
