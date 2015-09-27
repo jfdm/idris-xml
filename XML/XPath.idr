@@ -1,4 +1,4 @@
-module XPath
+module XML.XPath
 
 import XML.DOM
 
