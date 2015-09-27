@@ -25,10 +25,13 @@ mkDocType name id = MkDocType name id
 
 -- ------------------------------------------------------------- [ DOM Objects ]
 
-||| Creates a Document with a empty node
-mkDocument : QName -> Maybe DocType -> Document DOCUMENT
-mkDocument n dtd = MkDocument (createXMLInfoDefault) dtd Nil Nothing
+||| Creates a Document with an empty root node
+mkEmptyDocument : QName -> Maybe DocType -> Document DOCUMENT
+mkEmptyDocument n dtd = MkDocument (createXMLInfoDefault) dtd Nil Nothing
                               (Element n Nil Nil)
+
+mkDocument : Document ELEMENT -> Document DOCUMENT
+mkDocument root = MkDocument (createXMLInfoDefault) Nothing Nil Nothing root
 
 -- ------------------------------------------------------------------ [ QNames ]
 
