@@ -1,6 +1,9 @@
 package xml
 
-opts = "-p effects -p lightyear --warnreach"
+pkgs = effects
+     , lightyear
+
+opts = "--warnreach"
 
 modules = XML.DOM.Model
         , XML.DOM.Show
@@ -18,4 +21,5 @@ modules = XML.DOM.Model
         , XML.XPath
         , XML.XPath.Parser
         , XML.XPath.Types
+        , XML.XPath.Query
         , XML.XPath.Eff

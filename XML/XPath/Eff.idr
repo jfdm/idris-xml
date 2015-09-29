@@ -1,4 +1,10 @@
-||| Effectful helper operations
+-- ----------------------------------------------------------------- [ Eff.idr ]
+-- Module    : Eff.idr
+-- Copyright : (c) Jan de Muijnck-Hughes
+-- License   : see LICENSE
+-- --------------------------------------------------------------------- [ EOH ]
+
+||| XPath but in an effectfull context.
 module XML.XPath.Eff
 
 import Effects
@@ -7,17 +13,12 @@ import Effect.Exception
 import XML.DOM
 import XML.XPath
 
-queryDocE : String
-         -> Document DOCUMENT
-         -> {[EXCEPTION String]} Eff (List $ Document NODE)
-queryDocE q d = case queryDoc q d of
-  Left err  => raise $ show err
-  Right res => pure res
 
-queryElemE : String
-          -> Document ELEMENT
-          -> {[EXCEPTION String]} Eff (List $ Document NODE)
-queryElemE q e = case queryElem q e of
-   Left err  => raise $ show err
-   Right res => pure res
+queryE : String
+      -> Document ty
+      -> {auto prf : CanQuery ty}
+      -> Eff (Either XPathError (List XMLNode)) xs
+queryE qstr doc = pure $ query qstr doc
+
+
 -- --------------------------------------------------------------------- [ EOF ]

@@ -14,4 +14,13 @@ import public XML.DOM.Eq
 import public XML.DOM.Utils
 import public XML.DOM.API
 
+XMLDoc : Type
+XMLDoc = Document DOCUMENT
+
+XMLElem : Type
+XMLElem = Document ELEMENT
+
+XMLNode : Type
+XMLNode = Document NODE
+
 -- --------------------------------------------------------------------- [ EOF ]

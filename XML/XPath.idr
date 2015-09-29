@@ -1,8 +1,13 @@
+-- --------------------------------------------------------------- [ XPath.idr ]
+-- Module    : XPath.idr
+-- Copyright : (c) Jan de Muijnck-Hughes
+-- License   : see LICENSE
+-- --------------------------------------------------------------------- [ EOH ]
 module XML.XPath
 
 import XML.DOM
 
-import XML.XPath.Types
+import public XML.XPath.Types
 import XML.XPath.Parser
 
 %access public
@@ -10,12 +15,24 @@ import XML.XPath.Parser
 -- ------------------------------------------------------------------- [ ERROR ]
 
 data XPathError : Type where
-  MalformedQuery : String -> String -> XPathError
+  MalformedQuery : (qstr : String) -> (msg : String) -> XPathError
+  QueryError     : (qstr : XPath a) -> (loc : XMLNode) -> (msg : String) -> XPathError
+  GenericError   : String -> XPathError
 
 instance Show XPathError where
-  show (MalformedQuery q err) =
-    unlines [ unwords ["Query:", show q, "is malformed because"]
-            , err]
+  show (MalformedQuery q err) = unwords
+    [ "Query:"
+    , show q
+    , "is malformed because"
+    , err]
+
+  show (QueryError qstr loc msg) = unlines
+    [ unwords ["QueryError:", msg]
+    , "Asking for:"
+    , unwords ["\t", show qstr]
+    , "in"
+    , unwords ["\t", show loc]]
+  show (GenericError msg) = unwords ["Generic Error:", msg]
 
 -- ------------------------------------------------------------------- [ Query ]
 
@@ -41,27 +58,29 @@ evaluatePath (p <//> child) n with (child)
     | Any    = mkNodeList $ concatMap (getAllChildren) $ getElements (evaluatePath p n)
     | Elem c = mkNodeList $ concatMap (getElementsByName c) $ getElements (evaluatePath p n)
     | path   = concatMap (evaluatePath path) $ getElements (evaluatePath p n)
+
 -- ------------------------------------------------------------------ [ Parser ]
 
-public
-queryDoc : String
-      -> Document DOCUMENT
-      -> Either XPathError (List $ Document NODE)
-queryDoc qstr (MkDocument _ _ _ _ e) =
+private
+doQuery : String
+       -> Document ELEMENT
+       -> Either XPathError (List $ Document NODE)
+doQuery qstr e =
   case parse parseQuery qstr of
     Left err => Left $ MalformedQuery qstr err
     Right q  => Right $ evaluatePath q e
 
 public
-queryDoc' : Document DOCUMENT -> String
-          -> Either XPathError (List $ Document NODE)
-queryDoc' d q = queryDoc q d
+data CanQuery : NodeTy -> Type where
+  CQDoc  : CanQuery DOCUMENT
+  CQElem : CanQuery ELEMENT
 
 public
-queryElem : String
-         -> Document ELEMENT
-         -> Either XPathError (List $ Document NODE)
-queryElem qstr e = case parse parseQuery qstr of
-  Left err => Left $ MalformedQuery qstr err
-  Right q  => Right $ evaluatePath q e
+query : String
+     -> Document ty
+     -> {auto prf : CanQuery ty}
+     -> Either XPathError (List $ Document NODE)
+query {ty=ELEMENT}  qstr n                      = doQuery qstr n
+query {ty=DOCUMENT} qstr (MkDocument _ _ _ _ e) = doQuery qstr e
+
 -- --------------------------------------------------------------------- [ EOF ]
