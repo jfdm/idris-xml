@@ -23,4 +23,10 @@ XMLElem = Document ELEMENT
 XMLNode : Type
 XMLNode = Document NODE
 
+class XML a where
+  toXMLSnippet : a -> XMLElem
+
+  toXMLDoc : a -> XMLDoc
+  toXMLDoc o = mkDocument (toXMLSnippet o)
+
 -- --------------------------------------------------------------------- [ EOF ]
