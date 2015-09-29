@@ -72,7 +72,11 @@ mkAttrNamePrefix n pre = MkQName n Nothing (Just pre)
 mkSimpleElement : String -> Document ELEMENT
 mkSimpleElement name = Element tag Nil Nil
   where
+   tag : QName
    tag = mkQName name
+
+mkNode : String -> Document ELEMENT
+mkNode = mkSimpleElement
 
 ||| Create a element with a qualified name.
 mkElement : QName -> Document ELEMENT

@@ -19,10 +19,12 @@ import XML.Parser
 
 public
 data XMLError : Type where
+  ParseError     : String -> XMLError
   FileParseError : String -> String -> XMLError
   CannotReadFile : String -> XMLError
 
 instance Show XMLError where
+  show (ParseError err) = err
   show (FileParseError fn err) =
     unlines [ unwords ["Error parsing file", show fn, "error was"]
             , err]
@@ -39,10 +41,10 @@ readFile = readAcc ""
 
 namespace Doc
   public
-  fromString : String -> Either String (Document DOCUMENT)
-  fromString str = do
+  fromString : String -> Either XMLError (Document DOCUMENT)
+  fromString str =
     case parse parseXMLDoc str of
-      Left err  => Left $ err
+      Left err  => Left $ ParseError err
       Right res => pure $ res
 
 public
@@ -55,16 +57,17 @@ readXMLDoc f = do
         src <- readFile
         close
         case Doc.fromString src of
-          Left err  => pure $ Left (FileParseError f err)
+          Left err  => pure $ Left (FileParseError f (show err))
           Right res => pure $ Right res
       False => pure $ Left (CannotReadFile "Unable to read XML file")
 
+
 namespace Snippet
   public
-  fromString : String -> Either String (Document ELEMENT)
+  fromString : String -> Either XMLError (Document ELEMENT)
   fromString str = do
     case parse parseXMLSnippet str of
-      Left err  => Left $ err
+      Left err  => Left $ ParseError err
       Right res => pure $ res
 
 public
@@ -77,8 +80,21 @@ readXMLSnippet f = do
         src <- readFile
         close
         case Snippet.fromString src of
-          Left err  => pure $ Left (FileParseError f err)
+          Left err  => pure $ Left (FileParseError f (show err))
           Right res => pure $ Right res
       False => pure $ Left (CannotReadFile "Unable to read XML file")
+
+class XMLReader a where
+  fromSnippet : XMLElem -> Either XMLError a
+  fromXMLDoc  : XMLDoc  -> Either XMLError a
+
+class XMLWriter a where
+  toXML   : a -> XMLElem
+
+  toXMLDoc : a -> XMLDoc
+  toXMLDoc o = mkDocument (toXML o)
+
+
+
 
 -- --------------------------------------------------------------------- [ EOF ]
