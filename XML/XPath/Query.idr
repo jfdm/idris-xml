@@ -74,7 +74,7 @@ getNodeValue : (test : XPath TEST)
 getNodeValue test convErr qstr doc = do
     res <- getNodeValues test convErr qstr doc
     case res of
-      Nil    => Left (convErr $ SingletonError qstr)
+      Nil    => Left (convErr $ SingletonError (qstr))
       (x::_) => Right x
 
 ||| Use XPath to get the values for a named attribute in a node satisfying the
