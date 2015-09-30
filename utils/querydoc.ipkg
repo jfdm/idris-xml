@@ -1,0 +1,11 @@
+package querydoc
+
+pkgs = effects
+     , lightyear
+     , xml
+
+modules = QueryDoc
+
+main = QueryDoc
+
+executable = queryDoc
