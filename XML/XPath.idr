@@ -16,7 +16,8 @@ import XML.XPath.Parser
 
 data XPathError : Type where
   MalformedQuery : (qstr : String) -> (msg : String) -> XPathError
-  QueryError     : (qstr : XPath a) -> (loc : XMLNode) -> (msg : String) -> XPathError
+  QueryError     : (qstr : XPath a) -> (loc : XMLElem) -> (msg : Maybe String) -> XPathError
+  SingletonError : String -> XPathError
   GenericError   : String -> XPathError
 
 instance Show XPathError where
@@ -27,23 +28,28 @@ instance Show XPathError where
     , err]
 
   show (QueryError qstr loc msg) = unlines
-    [ unwords ["QueryError:", msg]
+    [ unwords ["QueryError:", fromMaybe "" msg]
     , "Asking for:"
     , unwords ["\t", show qstr]
     , "in"
-    , unwords ["\t", show loc]]
+    , unwords ["\t", (getTagName loc)]]
   show (GenericError msg) = unwords ["Generic Error:", msg]
+  show (SingletonError m) = unwords ["At Least one node expected.", show m]
 
 -- ------------------------------------------------------------------- [ Query ]
 
 private
-evaluatePath : XPath a -> Document ELEMENT -> List $ Document NODE
+evaluatePath : XPath a -> Document ELEMENT -> List XMLNode
+
 evaluatePath (Query q) n = evaluatePath q n
 evaluatePath (Elem e)  n = mkNodeList $ (getChildElementsByName e n)
 evaluatePath (Any)     n = mkNodeList $ getChildElements n
-evaluatePath (Attr a)  n = case getAttribute a n of
-    Just v => [mkTextNode v]
-    Nothing => Nil
+
+evaluatePath (Attr a)  n =
+    case getAttribute a n of
+      Just v  => [mkTextNode v]
+      Nothing => Nil
+
 evaluatePath (CData)   n = mkNodeList (getCData $ getNodes n)
 evaluatePath (Text)    n = mkNodeList (getText $ getNodes n)
 evaluatePath (Comment) n = mkNodeList (getComments $ getNodes n)
@@ -67,7 +73,7 @@ doQuery : String
        -> Either XPathError (List $ Document NODE)
 doQuery qstr e =
   case parse parseQuery qstr of
-    Left err => Left $ MalformedQuery qstr err
+    Left err => Left  $ MalformedQuery qstr err
     Right q  => Right $ evaluatePath q e
 
 public

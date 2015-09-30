@@ -36,8 +36,8 @@ getNode : (convErr : XPathError -> a)
        -> Either a XMLNode
 getNode convErr qstr doc = do
   res <- getNodes convErr qstr doc
-  case res of
-    Nil    => Left (convErr $ GenericError "Expected to find at least one node.")
+  case res of -- QueryError qstr loc msg
+    Nil    => Left (convErr $ SingletonError qstr)
     (x::_) => Right x
 
 
@@ -74,7 +74,7 @@ getNodeValue : (test : XPath TEST)
 getNodeValue test convErr qstr doc = do
     res <- getNodeValues test convErr qstr doc
     case res of
-      Nil    => Left (convErr $ GenericError "Expected to find at least one node.")
+      Nil    => Left (convErr $ SingletonError qstr)
       (x::_) => Right x
 
 ||| Use XPath to get the values for a named attribute in a node satisfying the
