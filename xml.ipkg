@@ -2,8 +2,9 @@ package xml
 
 pkgs = effects
      , lightyear
+     , test
 
-opts = "--warnreach"
+-- opts = "--warnreach"
 
 modules = XML.DOM.Model
         , XML.DOM.Show
@@ -23,3 +24,9 @@ modules = XML.DOM.Model
         , XML.XPath.Types
         , XML.XPath.Query
         , XML.XPath.Eff
+
+        , XML.Test.WellFormed
+        , XML.Test.NotWellFormed
+
+tests = XML.Test.WellFormed.runTests
+      , XML.Test.NotWellFormed.runTests

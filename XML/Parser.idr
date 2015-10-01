@@ -8,6 +8,7 @@
 module XML.Parser
 
 import Lightyear
+import Lightyear.Char
 import Lightyear.Strings
 
 import XML.DOM
@@ -20,7 +21,7 @@ qname : Parser (String, QName)
 qname = do
     pre <- opt $ (word <* colon)
     name <- word
-    space
+    spaces
     let pr = case pre of
         Just p => p ++ ":"
         Nothing => ""
@@ -29,8 +30,8 @@ qname = do
 
 attr : Parser $ (QName, String)
 attr = do
-    ((_,qn),v) <- genKVPair (qname) (literallyBetween '\"')
-    space
+    ((_,qn),v) <- genKVPair (qname) (quoted '\"')
+    spaces
     pure (qn, v)
   <?> "Node Attributes"
 
@@ -38,7 +39,7 @@ elemStart : Parser (String, QName, (List (QName, String)))
 elemStart = do
     token "<"
     (tag, qn) <- qname
-    ns <- opt $ keyvalue' "xmlns" (literallyBetween '\"')
+    ns <- opt $ keyvalue' "xmlns" (quoted '\"')
     as <- opt $ some (attr)
     pure (tag, record {nspace = ns} qn, fromMaybe Nil as)
   <?> "Start Tag"
@@ -49,21 +50,21 @@ elemEnd s = angles (token "/" *!> token s) <?> "End Tag"
 -- ------------------------------------------------------------------- [ Nodes ]
 comment : Parser $ Document COMMENT
 comment = token ("<!--") >! do
-    cs <- map pack $ manyTill (anyChar) (space *> token "-->")
+    cs <- map pack $ manyTill (anyChar) (spaces *> token "-->")
     pure $ Comment cs
   <?> "Comment"
 
 instruction : Parser $ Document INSTRUCTION
 instruction = token "<?" >! do
-    itarget <- word <* space
-    idata  <- some $ genKVPair (word <* space) (dquote url)
+    itarget <- word <* spaces
+    idata  <- some $ genKVPair (word <* spaces) (dquote url)
     token "?>"
     pure $ Instruction itarget idata
   <?> "Instruction"
 
 text : Parser $ (Document TEXT)
 text = do
-    txt <- some (xmlWord <* space)
+    txt <- some (xmlWord <* spaces)
     pure $ Text $ unwords txt
   <?> "Text Node"
 
@@ -76,7 +77,7 @@ cdata = do
 
 empty : Parser $ (Document ELEMENT)
 empty = do
-    (_, qn, as) <- elemStart <* space
+    (_, qn, as) <- elemStart <* spaces
     token "/>" >! do
       pure $ Element qn as Nil
   <?> "Empty Node"
@@ -95,7 +96,7 @@ mutual
 
   element : Parser $ Document ELEMENT
   element = do
-      (n, qn, as) <- elemStart <* space
+      (n, qn, as) <- elemStart <* spaces
       token ">" *!> do
         ns <- some nodes
         elemEnd $ trim n
@@ -113,9 +114,9 @@ notStandalone = (expValue "no" *> return False)
 public
 xmlinfo : Parser XMLInfo
 xmlinfo = token "<?xml" *!> do
-    vers <- keyvalue' "version" $ literallyBetween '\"' <* space
-    enc  <- opt $ keyvalue' "encoding" $ literallyBetween '\"' <* space
-    alone <- opt $ keyvalue' "standalone" standalone <* space
+    vers <- keyvalue' "version" $ quoted '\"' <* spaces
+    enc  <- opt $ keyvalue' "encoding" $ quoted '\"' <* spaces
+    alone <- opt $ keyvalue' "standalone" standalone <* spaces
     token "?>"
     pure $ MkXMLInfo vers (fromMaybe "UTF-8" enc) (fromMaybe True alone)
    <?> "XML Info"
@@ -126,15 +127,15 @@ xmlinfo = token "<?xml" *!> do
 pubident : Parser ExternalID
 pubident = do
     token "PUBLIC" >! do
-      loc <- literallyBetween '\"' <* space
-      loc' <- literallyBetween '\"' <* space
+      loc  <- quoted '\"' <* spaces
+      loc' <- quoted '\"' <* spaces
       pure $ PublicID loc loc'
   <?> "Public identifer"
 
 sysident : Parser ExternalID
 sysident = do
     token "SYSTEM" >! do
-      loc <- literallyBetween '\"' <* space
+      loc <- quoted '\"' <* spaces
       pure $ SystemID loc
   <?> "System Identifier"
 
@@ -149,8 +150,8 @@ doctype = angles body <?> "DocType"
     body : Parser $ DocType
     body = do
         token "!DOCTYPE" >! do
-          v <- word <* space
-          id <- opt ident <* space
+          v <- word <* spaces
+          id <- opt ident <* spaces
           pure $ MkDocType v id
       <?> "DocType Body"
 
@@ -161,11 +162,11 @@ parseXMLSnippet = element <?> "XML Element"
 public
 parseXMLDoc : Parser $ Document DOCUMENT
 parseXMLDoc = do
-    info <- xmlinfo <* space
-    dtype <- opt doctype <* space
-    is <- many instruction <* space
-    doc <- opt comment <* space
-    root <- element -- Add check if docttype exists for name of root element
+    info  <- xmlinfo <* spaces
+    dtype <- opt doctype <* spaces
+    is    <- many instruction <* spaces
+    doc   <- opt comment <* spaces
+    root  <- element -- Add check if docttype exists for name of root element
     pure $ MkDocument info dtype is doc root
   <?> "XML DOcument"
 -- --------------------------------------------------------------------- [ EOF ]

@@ -7,6 +7,7 @@ module XML.Reader
 
 import Lightyear
 import Lightyear.Strings
+import Lightyear.StringFile
 
 import Effects
 import Effect.File
@@ -31,14 +32,6 @@ instance Show XMLError where
   show (CannotReadFile fn) = unwords ["Cannot read file:", show fn]
 
 
-readFile : { [FILE_IO (OpenFile Read)] } Eff String
-readFile = readAcc ""
-  where
-    readAcc : String -> { [FILE_IO (OpenFile Read)] } Eff String
-    readAcc acc = if (not !eof)
-                     then readAcc (acc ++ !readLine)
-                     else pure acc
-
 namespace Doc
   public
   fromString : String -> Either XMLError (Document DOCUMENT)
@@ -51,16 +44,7 @@ public
 readXMLDoc : String
            -> Eff (Either XMLError (Document DOCUMENT))
                   [FILE_IO ()]
-readXMLDoc f = do
-    case !(open f Read) of
-      True => do
-        src <- readFile
-        close
-        case Doc.fromString src of
-          Left err  => pure $ Left (FileParseError f (show err))
-          Right res => pure $ Right res
-      False => pure $ Left (CannotReadFile "Unable to read XML file")
-
+readXMLDoc f = parseFile CannotReadFile FileParseError parseXMLDoc f
 
 namespace Snippet
   public
@@ -74,15 +58,7 @@ public
 readXMLSnippet : String
               -> Eff (Either XMLError (Document ELEMENT))
                      [FILE_IO ()]
-readXMLSnippet f = do
-    case !(open f Read) of
-      True => do
-        src <- readFile
-        close
-        case Snippet.fromString src of
-          Left err  => pure $ Left (FileParseError f (show err))
-          Right res => pure $ Right res
-      False => pure $ Left (CannotReadFile "Unable to read XML file")
+readXMLSnippet f = parseFile CannotReadFile FileParseError parseXMLSnippet f
 
 class XMLReader a where
   fromSnippet : XMLElem -> Either XMLError a

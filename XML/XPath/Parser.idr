@@ -12,6 +12,7 @@ import XML.DOM
 import XML.XPath.Types
 
 import public Lightyear
+import public Lightyear.Char
 import public Lightyear.Strings
 
 import XML.ParseUtils

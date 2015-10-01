@@ -9,19 +9,15 @@
 module XML.ParseUtils
 
 import Lightyear
+import Lightyear.Char
 import Lightyear.Strings
 
 %access public
 
 -- -------------------------------------------------------------- [ Characters ]
-eol : Parser ()
-eol = char '\n' *> return () <?> "EOL"
-
-anyChar : Parser Char
-anyChar = satisfy (const True) <?> "Any Char"
 
 word : Parser String
-word = map pack (some $ satisfy isAlphaNum) <?> "Word"
+word = map pack (some $ alphaNum) <?> "Word"
 
 entities : Parser Char
 entities = do
@@ -66,7 +62,7 @@ urlChar = do
 
 private
 pathChar : Parser Char
-pathChar = urlChar <|> satisfy isAlphaNum <?> "Path Char"
+pathChar = urlChar <|> alphaNum <?> "Path Char"
 
 ||| Parse URIs
 url : Parser String
@@ -74,7 +70,7 @@ url = map pack (some pathChar) <?> "URL"
 
 
 allowedChar : Parser Char
-allowedChar = urlChar <|> satisfy isAlphaNum <|> reservedChar <?> "Reserved Char"
+allowedChar = urlChar <|> alphaNum <|> reservedChar <?> "Reserved Char"
 
 ||| Parse XML Words
 xmlWord : Parser String
@@ -82,43 +78,28 @@ xmlWord = map pack (some entities)
       <|> map pack (some allowedChar)
       <|> word <?> "Valid XML words"
 
--- ------------------------------------------------------------- [ Combinators ]
-
-literallyBetween : Char -> Parser String
-literallyBetween c = map pack $ between (char c) (char c) (some (satisfy (/= c)))
-
-manyTill : Monad m => ParserT m String a
-                   -> ParserT m String b
-                   -> ParserT m String (List a)
-manyTill p end = scan
-  where
-    scan : Monad m => ParserT m String (List a)
-    scan = do { end; return List.Nil } <|>
-           do { x <- p; xs <- scan; return (x::xs)}
-
-
 -- ---------------------------------------------------------------- [ KV Pairs ]
 expValue : String -> Parser ()
-expValue s = skip $ dquote $ string s <* space
+expValue s = skip $ dquote $ string s <* spaces
 
 genKVPair : Parser a -> Parser b -> Parser (a, b)
 genKVPair key value = do
     k <- key
     equals
-    v <- value <* space
+    v <- value <* spaces
     pure (k,v)
   <?> "KV Pair Impl"
 
 keyvalue : Parser (String, String)
 keyvalue = do
-    (k,v) <- genKVPair (word <* space) (literallyBetween '\"')
+    (k,v) <- genKVPair (word <* spaces) (quoted '\"')
     pure (k, v)
   <?> "String KV Pair"
 
 keyvalue' : String -> Parser a -> Parser a
 keyvalue' key value = do
     (_,v) <- genKVPair (token key) value
-    space
+    spaces
     pure v
   <?> "Value from Known Key"
 
