@@ -18,14 +18,26 @@ instance [xmlKV] Show (QName, String) where
 
 instance [xml] Show (Document x) where
   show (MkDocument info dtype ins doc es) = unwords [show @{xml} es]
-  show (Element naam as ns) = unwords [
-          "<" ++ show @{xmlQName} naam ++ concatMap (show @{xmlKV}) as ++ ">",
-          unwords $ map (show @{xml}) ns,
-          "</"++ show @{xmlQName} naam ++ ">\n"]
+  show (Element naam as Nil) =
+    concat [ "<"
+           , show @{xmlQName} naam
+           , concatMap (show @{xmlKV}) as
+           , "/>"]
+  show (Element naam as ns)  =
+    concat [ "<"
+           , show @{xmlQName} naam
+           , " "
+           , concatMap (show @{xmlKV}) as
+           , ">"
+           , unwords $ map (show @{xml}) ns
+           , "</"
+           , show @{xmlQName} naam
+           , ">\n"
+           ]
   show (Node n)          = show @{xml} n
   show (Comment str)     = unwords ["<!-- ", show str, "-->\n"]
   show (Text txt)        = txt
-  show (CData txt)       = unwords ["<![CData[\n", show txt, "\n]]>\n"]
+  show (CData txt)       = unlines ["<![CDATA[", txt, "]]>"]
   show (Instruction t d) = unwords ["<?", t , show d ,"?>\n"]
 
 -- --------------------------------------------------------------------- [ EOF ]
