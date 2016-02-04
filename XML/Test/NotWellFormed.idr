@@ -11,6 +11,7 @@ import Test.Parsing
 import XML.DOM
 import XML.Parser
 
+export
 runTests : IO ()
 runTests = do
   putStrLn $ heading "Not WellFormed"

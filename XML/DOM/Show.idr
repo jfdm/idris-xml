@@ -9,8 +9,9 @@ module XML.DOM.Show
 
 import XML.DOM.Model
 
+%access public export
 -- ------------------------------------------------------------------- [ QName ]
-instance Show QName where
+implementation Show QName where
   show (MkQName n ns pre) = "[" ++ showPre ++ n ++ showNS ++ "]"
     where
       showPre = case pre of
@@ -22,17 +23,17 @@ instance Show QName where
           Nothing => " xmlns=" ++ ns'
         Nothing => ""
 
-instance Show XMLInfo where
+implementation Show XMLInfo where
   show (MkXMLInfo v enc std) = unwords ["[XML", show v, show enc, show std, "]\n"]
 
-instance Show ExternalID where
+implementation Show ExternalID where
   show (SystemID loc)       = unwords ["SYSTEM", show loc]
   show (PublicID ident loc) = unwords ["PUBLIC", show ident, show loc]
 
-instance Show DocType where
+implementation Show DocType where
   show (MkDocType n ident) = unwords ["[!DOCTYPE", n, show ident, "]\n"]
 
-instance Show (Document x) where
+implementation Show (Document x) where
   show (MkDocument info dtype ins doc es) = unwords ["[Document ",
                    show info, show dtype, show ins, show doc, show es,"]\n"]
   show (Element naam as ns) = unwords ["[Element ", show naam, show as, show ns, "]\n"]

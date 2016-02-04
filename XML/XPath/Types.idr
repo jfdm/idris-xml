@@ -7,6 +7,8 @@
 -- --------------------------------------------------------------------- [ EOH ]
 module XML.XPath.Types
 
+%access public export
+
 data XPathTy = NODE | PATH | QUERY | ROOT | TEST
 
 data ValidPath : (head : XPathTy) -> (tail : XPathTy) -> Type where
@@ -49,7 +51,8 @@ data XPath : XPathTy -> Type where
          -> {auto prf : ValidPath a b}
          -> XPath PATH
 
-instance Show (XPath x) where
+public export
+Show (XPath x) where
   show (Query q) = unwords ["[Query ", show q, "]\n"]
   show (Elem e)  = e
   show (Any)     = "*"

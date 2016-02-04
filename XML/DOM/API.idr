@@ -16,7 +16,7 @@ import XML.DOM.Utils
 
 import Debug.Trace
 
-%access public
+%access export
 
 -- ---------------------------------------------------------------- [ DocTypes ]
 

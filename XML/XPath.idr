@@ -10,17 +10,19 @@ import XML.DOM
 import public XML.XPath.Types
 import XML.XPath.Parser
 
-%access public
+%access private
 
 -- ------------------------------------------------------------------- [ ERROR ]
 
+public export
 data XPathError : Type where
   MalformedQuery : (qstr : String) -> (msg : String) -> XPathError
   QueryError     : (qstr : XPath a) -> (loc : XMLElem) -> (msg : Maybe String) -> XPathError
   SingletonError : String -> XPathError
   GenericError   : String -> XPathError
 
-instance Show XPathError where
+public export
+Show XPathError where
   show (MalformedQuery q err) = unwords
     [ "Query:"
     , show q
@@ -76,12 +78,12 @@ doQuery qstr e =
     Left err => Left  $ MalformedQuery qstr err
     Right q  => Right $ evaluatePath q e
 
-public
+public export
 data CanQuery : NodeTy -> Type where
   CQDoc  : CanQuery DOCUMENT
   CQElem : CanQuery ELEMENT
 
-public
+export
 query : String
      -> Document ty
      -> {auto prf : CanQuery ty}

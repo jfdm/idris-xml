@@ -14,6 +14,8 @@ import public XML.DOM.Eq
 import public XML.DOM.Utils
 import public XML.DOM.API
 
+%access public export
+
 XMLDoc : Type
 XMLDoc = Document DOCUMENT
 

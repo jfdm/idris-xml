@@ -6,6 +6,8 @@ import Effect.Exception
 
 import XML.DOM
 
+%access export
+
 getAttributeE : String
              -> Document ELEMENT
              -> {[EXCEPTION String]} Eff String

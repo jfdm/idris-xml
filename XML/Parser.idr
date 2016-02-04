@@ -84,7 +84,7 @@ empty = do
 
 mutual
 
-  public
+  export
   nodes : Parser $ Document NODE
   nodes = map (\n => Node n) comment
       <|> map (\n => Node n) cdata
@@ -111,7 +111,7 @@ notStandalone : Parser Bool
 notStandalone = (expValue "no" *> return False)
            <|> (expValue "false" *> return False) <?> "Expected not Standalone"
 
-public
+export
 xmlinfo : Parser XMLInfo
 xmlinfo = token "<?xml" *!> do
     vers <- keyvalue' "version" $ quoted '\"' <* spaces
@@ -143,7 +143,7 @@ ident : Parser ExternalID
 ident = pubident <|> sysident <?> "Identifiers"
 
 ||| Parse Doctypes
-public
+export
 doctype : Parser DocType
 doctype = angles body <?> "DocType"
   where
@@ -155,11 +155,11 @@ doctype = angles body <?> "DocType"
           pure $ MkDocType v id
       <?> "DocType Body"
 
-public
+export
 parseXMLSnippet : Parser $ Document ELEMENT
 parseXMLSnippet = element <?> "XML Element"
 
-public
+export
 parseXMLDoc : Parser $ Document DOCUMENT
 parseXMLDoc = do
     info  <- xmlinfo <* spaces

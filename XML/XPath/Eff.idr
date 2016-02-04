@@ -13,7 +13,7 @@ import Effect.Exception
 import XML.DOM
 import XML.XPath
 
-
+export
 queryE : String
       -> Document ty
       -> {auto prf : CanQuery ty}

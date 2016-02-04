@@ -9,14 +9,15 @@ module XML.DOM.ShowXML
 
 import XML.DOM.Model
 
+%access public export
 -- ------------------------------------------------------------------- [ QName ]
-instance [xmlQName] Show QName where
+implementation [xmlQName] Show QName where
   show (MkQName n ns pre) = n
 
-instance [xmlKV] Show (QName, String) where
+implementation [xmlKV] Show (QName, String) where
   show (k,v) = unwords [" ", show @{xmlQName} k,"=", show v]
 
-instance [xml] Show (Document x) where
+implementation [xml] Show (Document x) where
   show (MkDocument info dtype ins doc es) = unwords [show @{xml} es]
   show (Element naam as Nil) =
     concat [ "<"

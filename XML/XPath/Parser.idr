@@ -113,7 +113,7 @@ mutual
 path : Parser $ XPath PATH
 path = decpath <|> anypath <|> abspath <?> "Path"
 
-public
+export
 parseQuery : Parser $ XPath QUERY
 parseQuery = map Query nodetest
          <|> map Query path

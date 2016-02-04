@@ -9,6 +9,8 @@ module XML.XPath.Query
 import XML.DOM
 import XML.XPath
 
+%access export
+
 ||| Use XPath to find some nodes satisfying some query
 |||
 ||| @convErr Convert XPathError to a local Error Type

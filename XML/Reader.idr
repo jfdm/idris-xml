@@ -18,13 +18,14 @@ import XML.Parser
 
 %access private
 
-public
+public export
 data XMLError : Type where
   ParseError     : String -> XMLError
   FileParseError : String -> String -> XMLError
   CannotReadFile : String -> XMLError
 
-instance Show XMLError where
+public export
+Show XMLError where
   show (ParseError err) = err
   show (FileParseError fn err) =
     unlines [ unwords ["Error parsing file", show fn, "error was"]
@@ -33,38 +34,38 @@ instance Show XMLError where
 
 
 namespace Doc
-  public
+  export
   fromString : String -> Either XMLError (Document DOCUMENT)
   fromString str =
     case parse parseXMLDoc str of
       Left err  => Left $ ParseError err
       Right res => pure $ res
 
-public
+export
 readXMLDoc : String
            -> Eff (Either XMLError (Document DOCUMENT))
                   [FILE_IO ()]
 readXMLDoc f = parseFile CannotReadFile FileParseError parseXMLDoc f
 
 namespace Snippet
-  public
+  export
   fromString : String -> Either XMLError (Document ELEMENT)
   fromString str = do
     case parse parseXMLSnippet str of
       Left err  => Left $ ParseError err
       Right res => pure $ res
 
-public
+export
 readXMLSnippet : String
               -> Eff (Either XMLError (Document ELEMENT))
                      [FILE_IO ()]
 readXMLSnippet f = parseFile CannotReadFile FileParseError parseXMLSnippet f
 
-class XMLReader a where
+interface XMLReader a where
   fromSnippet : XMLElem -> Either XMLError a
   fromXMLDoc  : XMLDoc  -> Either XMLError a
 
-class XMLWriter a where
+interface XMLWriter a where
   toXML   : a -> XMLElem
 
   toXMLDoc : a -> XMLDoc

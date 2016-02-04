@@ -7,22 +7,24 @@ module XML.DOM.Eq
 
 import XML.DOM.Model
 
-instance Eq QName where
+%access public export
+
+implementation Eq QName where
   (==) (MkQName x xs _) (MkQName y ys _) = x == y && xs == ys
 
 
-instance Eq XMLInfo where
+implementation Eq XMLInfo where
   (==) (MkXMLInfo a b c) (MkXMLInfo x y z) = a == x && b == y && c == z
 
-instance Eq ExternalID where
+implementation Eq ExternalID where
   (==) (SystemID x)      (SystemID y)      = x == y
   (==) (PublicID x xloc) (PublicID y yloc) = x == y && xloc == yloc
   (==) _                 _                 = False
 
-instance Eq DocType where
+implementation Eq DocType where
   (==) (MkDocType x xid) (MkDocType y yid) = x == y && xid == yid
 
-instance Eq NodeTy where
+implementation Eq NodeTy where
   (==) DOCUMENT    DOCUMENT    = True
   (==) ELEMENT     ELEMENT     = True
   (==) TEXT        TEXT        = True
@@ -45,7 +47,7 @@ mutual
   eqDoc _                   _                   = False
 
   --- Eq on liss of nodes is removed.
-  instance Eq (Document x) where
+  implementation Eq (Document x) where
     (==) = eqDoc
 
 -- --------------------------------------------------------------------- [ EOF ]

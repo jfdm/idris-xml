@@ -12,7 +12,7 @@ import Lightyear
 import Lightyear.Char
 import Lightyear.Strings
 
-%access public
+%access export
 
 -- -------------------------------------------------------------- [ Characters ]
 
