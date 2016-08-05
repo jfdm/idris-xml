@@ -22,15 +22,19 @@ public export
 data XMLError : Type where
   ParseError     : String -> XMLError
   FileParseError : String -> String -> XMLError
-  CannotReadFile : String -> XMLError
+  CannotReadFile : String -> FileError -> XMLError
 
 public export
 Show XMLError where
   show (ParseError err) = err
   show (FileParseError fn err) =
     unlines [ unwords ["Error parsing file", show fn, "error was"]
-            , err]
-  show (CannotReadFile fn) = unwords ["Cannot read file:", show fn]
+            , err
+            ]
+  show (CannotReadFile fn err) =
+    unlines [ unwords ["Cannot read file:", show fn, "error was"]
+            , show err
+            ]
 
 
 namespace Doc
@@ -44,7 +48,7 @@ namespace Doc
 export
 readXMLDoc : String
            -> Eff (Either XMLError (Document DOCUMENT))
-                  [FILE_IO ()]
+                  [FILE ()]
 readXMLDoc f = parseFile CannotReadFile FileParseError parseXMLDoc f
 
 namespace Snippet
@@ -58,7 +62,7 @@ namespace Snippet
 export
 readXMLSnippet : String
               -> Eff (Either XMLError (Document ELEMENT))
-                     [FILE_IO ()]
+                     [FILE ()]
 readXMLSnippet f = parseFile CannotReadFile FileParseError parseXMLSnippet f
 
 interface XMLReader a where
