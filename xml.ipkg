@@ -1,11 +1,20 @@
 package xml
 
+author     = Jan de Muijnck-Hughes
+maintainer = Jan de Muijnck-Hughes
+license    = BSD3 but see LICENSE for more information
+brief      = "XML in Idris"
+readme     = README.md
+version    = 0.1
+sourceloc  = git://git@github.com:jfdm/idris-xml.git
+bugtracker = http://www.github.com/jfdm/idris-xml/issues
+
+
 pkgs = effects
      , lightyear
      , test
      , testparse
 
--- opts = "--warnreach"
 
 modules = XML.DOM.Model
         , XML.DOM.Show
