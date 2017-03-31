@@ -13,7 +13,6 @@ bugtracker = http://www.github.com/jfdm/idris-xml/issues
 pkgs = effects
      , lightyear
      , test
-     , testparse
 
 
 modules = XML.DOM.Model

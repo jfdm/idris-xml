@@ -7,9 +7,9 @@
 -- --------------------------------------------------------------------- [ EOH ]
 module XML.Parser
 
-import Lightyear
-import Lightyear.Char
-import Lightyear.Strings
+import public Lightyear
+import public Lightyear.Char
+import public Lightyear.Strings
 
 import XML.DOM
 import XML.ParseUtils
@@ -104,12 +104,12 @@ mutual
      <?> "Element"
 
 isStandalone : Parser Bool
-isStandalone = (expValue "yes" *> return True)
-           <|> (expValue "true" *> return True) <?> "Expected Standalone"
+isStandalone = (expValue "yes" *> pure True)
+           <|> (expValue "true" *> pure True) <?> "Expected Standalone"
 
 notStandalone : Parser Bool
-notStandalone = (expValue "no" *> return False)
-           <|> (expValue "false" *> return False) <?> "Expected not Standalone"
+notStandalone = (expValue "no" *> pure False)
+           <|> (expValue "false" *> pure False) <?> "Expected not Standalone"
 
 export
 xmlinfo : Parser XMLInfo
