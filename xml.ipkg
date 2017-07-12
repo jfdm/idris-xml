@@ -13,15 +13,10 @@ bugtracker = http://www.github.com/jfdm/idris-xml/issues
 pkgs = effects
      , lightyear
      , test
+     , containers
+     , commons
 
-
-modules = XML.DOM.Model
-        , XML.DOM.Show
-        , XML.DOM.ShowXML
-        , XML.DOM.Eq
-        , XML.DOM.API
-        , XML.DOM.Utils
-        , XML.DOM.Eff
+modules = XML.DOM.Eff
         , XML.DOM
 
         , XML.Reader
