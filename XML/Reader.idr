@@ -73,7 +73,7 @@ interface XMLWriter a where
   toXML   : a -> XMLElem
 
   toXMLDoc : a -> XMLDoc
-  toXMLDoc o = mkDocument (toXML o)
+  toXMLDoc o = mkSimpleDocument (toXML o)
 
 
 

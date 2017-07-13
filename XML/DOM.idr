@@ -267,6 +267,12 @@ defaultXMLInfo = mkXMLInfo "1.2" "UTF-8" True
 emptyNodeList : PList NodeTy Document ValidNode Nil Nil
 emptyNodeList = Nil
 
+mkSystemID : String -> Document IDENT
+mkSystemID = SystemID
+
+mkPublicID : String -> String -> Document IDENT
+mkPublicID = PublicID
+
 -- [ DocTypes ]
 
 mkDocType : String -> Maybe (Document IDENT) -> Document DOCTYPE
@@ -276,9 +282,14 @@ mkDocType = DocType
 
 -- ------------------------------------------------------------------ [ QNames ]
 
-||| Create a local name
-mkQName : String -> Document QNAME
-mkQName n = QName n Nothing Nothing
+mkQName : String -> Maybe String -> Maybe String -> Document QNAME
+mkQName = QName
+
+namespace Simple
+
+    ||| Create a local name
+    mkQName : String -> Document QNAME
+    mkQName n = QName n Nothing Nothing
 
 ||| Create a qualified name with a name space
 |||
@@ -307,6 +318,9 @@ mkQNameNSPrefix n pre ns = QName n (Just ns) (Just pre)
 mkAttrNamePrefix : String -> String -> Document QNAME
 mkAttrNamePrefix n pre = QName n Nothing (Just pre)
 
+setNameSpace : Maybe String -> Document QNAME -> Document QNAME
+setNameSpace s (QName n _ pre) = QName n s pre
+
 -- ---------------------------------------------------------------- [ Elements ]
 
 ||| Create a element with a local qualified name.
@@ -315,13 +329,6 @@ mkSimpleElement name = Element tag Nil Nil
   where
    tag : Document QNAME
    tag = mkQName name
-
-mkNode : String -> Document ELEMENT
-mkNode = mkSimpleElement
-
-||| Create a element with a qualified name.
-mkElement : Document QNAME -> Document ELEMENT
-mkElement qname = Element qname Nil Nil
 
 ||| Create a element with a Namespace.
 |||
@@ -366,26 +373,37 @@ mkEmptyDocument n dtd =
              Nothing
              (Element n Nil emptyNodeList)
 
-mkDocument : Document ELEMENT -> Document DOCUMENT
-mkDocument root = MkDocument (defaultXMLInfo) Nothing Nil Nothing root
+mkSimpleDocument : Document ELEMENT -> Document DOCUMENT
+mkSimpleDocument root = MkDocument (defaultXMLInfo) Nothing Nil Nothing root
+
+mkDocument : (info         : Document INFO)
+          -> (doctype      : Maybe $ Document DOCTYPE)
+          -> (instructions : List (Document INSTRUCTION))
+          -> (comment      : Maybe (Document COMMENT))
+          -> (root         : Document ELEMENT)
+          -> Document DOCUMENT
+mkDocument = MkDocument
 
 -- ----------------------------------------------------------- [ Node Creation ]
 
 ||| Create an XML Comment
-mkCommentNode : String -> Document COMMENT
-mkCommentNode = Comment
+mkComment : String -> Document COMMENT
+mkComment = Comment
 
 mkCData : String -> Document CDATA
 mkCData = CData
 
-mkTextNode : String -> Document TEXT
-mkTextNode = Text
+mkText : String -> Document TEXT
+mkText = Text
 
-mkInstructNode : String -> List (String, String) -> Document INSTRUCTION
-mkInstructNode = Instruction
+mkInstruction : String -> List (String, String) -> Document INSTRUCTION
+mkInstruction = Instruction
 
-mkElementNode : String -> Document ELEMENT
-mkElementNode = mkSimpleElement
+mkEmptyElement : Document QNAME -> List (Document QNAME, String) -> Document ELEMENT
+mkEmptyElement n as = Element n as Nil
+
+mkElement : Document QNAME -> List (Document QNAME, String) -> NodeList ts prfs -> Document ELEMENT
+mkElement = Element
 
 -- -------------------------------------------------------------- [ Attributes ]
 
@@ -574,33 +592,46 @@ addText s e = appendToNode (Text s) e ValidText
 
 -- ------------------------------------------------------------ [ Node Queries ]
 
-||| getElements
-getElements : NodeList ts prfs
-           -> List $ Document ELEMENT
-getElements [] = []
-getElements ((::) elem {prf = ValidElem} rest) = elem :: getElements rest
-getElements ((::) elem {prf} rest) = getElements rest
+namespace NodeList
+  ||| getElements
+  getElements : NodeList ts prfs
+             -> List $ Document ELEMENT
+  getElements [] = []
+  getElements ((::) elem {prf = ValidElem} rest) = elem :: getElements rest
+  getElements ((::) elem {prf} rest) = getElements rest
 
-getText : NodeList ts prfs
-       -> List $ Document TEXT
-getText [] = []
-getText ((::) elem {prf = ValidText} rest) = elem :: getText rest
-getText ((::) elem {prf} rest) = getText rest
+  getText : NodeList ts prfs
+         -> List $ Document TEXT
+  getText [] = []
+  getText ((::) elem {prf = ValidText} rest) = elem :: getText rest
+  getText ((::) elem {prf} rest) = getText rest
 
-getComments : NodeList ts prfs
-           -> List $ Document COMMENT
-getComments Nil = Nil
-getComments ((::) elem {prf = ValidDoc} rest) = elem :: getComments rest
-getComments ((::) elem {prf} rest)            = getComments rest
+  getComments : NodeList ts prfs
+             -> List $ Document COMMENT
+  getComments Nil = Nil
+  getComments ((::) elem {prf = ValidDoc} rest) = elem :: getComments rest
+  getComments ((::) elem {prf} rest)            = getComments rest
 
-getCData : NodeList ts prfs -> List $ Document CDATA
-getCData Nil = Nil
-getCData ((::) elem {prf = ValidCData} rest) = elem :: getCData rest
-getCData ((::) elem {prf} rest)              = getCData rest
+  getCData : NodeList ts prfs -> List $ Document CDATA
+  getCData Nil = Nil
+  getCData ((::) elem {prf = ValidCData} rest) = elem :: getCData rest
+  getCData ((::) elem {prf} rest)              = getCData rest
 
+getElements : Document ELEMENT -> List $ Document ELEMENT
+getElements (Element _ _ ns) = getElements ns
+
+getText : Document ELEMENT -> List $ Document TEXT
+getText (Element _ _ ns) = getText ns
+
+getComments : Document ELEMENT -> List $ Document COMMENT
+getComments (Element _ _ ns) = getComments ns
+
+getCData : Document ELEMENT -> List $ Document CDATA
+getCData (Element _ _ ns) = getCData ns
 
 -- --------------------------------------------------------- [ Element Queries ]
 
+public export
 data CanQuery : NodeTy -> Type where
   QueryDoc  : CanQuery DOCUMENT
   QueryElem : CanQuery ELEMENT

@@ -40,31 +40,46 @@ Show XPathError where
 
 -- ------------------------------------------------------------------- [ Query ]
 
+evalTy : XPath a -> Type
+evalTy (Query x) = evalTy x
+evalTy Any = List $ Document ELEMENT
+evalTy (Elem x) = List $ Document ELEMENT
+evalTy (Attr x) = Maybe String
+evalTy Text = List $ Document TEXT
+evalTy Comment = List $ Document COMMENT
+evalTy CData = List $ Document CDATA
+evalTy (Root x) = evalTy x
+evalTy (DRoot x) = evalTy x
+evalTy (x </> y) = evalTy y
+evalTy (x <//> y) = evalTy y
+
 private
-evaluatePath : XPath a -> Document ELEMENT -> List XMLNode
+evaluatePath : (q : XPath a)
+            -> Document ELEMENT
+            -> evalTy q
 
 evaluatePath (Query q) n = evaluatePath q n
-evaluatePath (Elem e)  n = mkNodeList $ (getChildElementsByName e n)
-evaluatePath (Any)     n = mkNodeList $ getChildElements n
+evaluatePath (Elem e)  n = getChildElementsByName e n
+evaluatePath (Any)     n = getChildElements n
 
-evaluatePath (Attr a)  n =
-    case getAttribute a n of
-      Just v  => [mkTextNode v]
-      Nothing => Nil
+evaluatePath (Attr a)  n = getAttribute a n
 
-evaluatePath (CData)   n = mkNodeList (getCData $ getNodes n)
-evaluatePath (Text)    n = mkNodeList (getText $ getNodes n)
-evaluatePath (Comment) n = mkNodeList (getComments $ getNodes n)
+evaluatePath (CData)   n = getCData n
+evaluatePath (Text)    n = getText n
+evaluatePath (Comment) n = getComments n
+
 evaluatePath (Root r)  n with (r)
-    | Any    = [Node n]
-    | Elem e = if getTagName n == e then [Node n] else Nil
+    | Any    = [n]
+    | Elem e = if getTagName n == e then [n] else Nil
+
 evaluatePath (DRoot r) n with (r)
-    | Any    = mkNodeList $ getAllChildren n
-    | Elem e = mkNodeList $ getElementsByName e n
+    | Any    = getAllChildren n
+    | Elem e = getElementsByName e n
+
 evaluatePath (p </> c) n = concatMap (evaluatePath c) $ getElements (evaluatePath p n)
 evaluatePath (p <//> child) n with (child)
-    | Any    = mkNodeList $ concatMap (getAllChildren) $ getElements (evaluatePath p n)
-    | Elem c = mkNodeList $ concatMap (getElementsByName c) $ getElements (evaluatePath p n)
+    | Any    = fromList $ concatMap (getAllChildren) $ getElements (evaluatePath p n)
+    | Elem c = fromListList $ concatMap (getElementsByName c) $ getElements (evaluatePath p n)
     | path   = concatMap (evaluatePath path) $ getElements (evaluatePath p n)
 
 -- ------------------------------------------------------------------ [ Parser ]
@@ -77,11 +92,6 @@ doQuery qstr e =
   case parse parseQuery qstr of
     Left err => Left  $ MalformedQuery qstr err
     Right q  => Right $ evaluatePath q e
-
-public export
-data CanQuery : NodeTy -> Type where
-  CQDoc  : CanQuery DOCUMENT
-  CQElem : CanQuery ELEMENT
 
 export
 query : String

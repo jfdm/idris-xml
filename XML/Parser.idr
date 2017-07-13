@@ -17,7 +17,7 @@ import XML.ParseUtils
 %access private
 
 -- ------------------------------------------------------------------- [ Utils ]
-qname : Parser (String, QName)
+qname : Parser (String, Document QNAME)
 qname = do
     pre <- opt $ (word <* colon)
     name <- word
@@ -26,22 +26,22 @@ qname = do
         Just p => p ++ ":"
         Nothing => ""
     let tag = pr ++ name
-    pure (tag, MkQName name Nothing pre)
+    pure (tag, mkQName name Nothing pre)
 
-attr : Parser $ (QName, String)
+attr : Parser $ (Document QNAME, String)
 attr = do
     ((_,qn),v) <- genKVPair (qname) (quoted '\"')
     spaces
     pure (qn, v)
   <?> "Node Attributes"
 
-elemStart : Parser (String, QName, (List (QName, String)))
+elemStart : Parser (String, Document QNAME, (List (Document QNAME, String)))
 elemStart = do
     token "<"
     (tag, qn) <- qname
     ns <- opt $ keyvalue' "xmlns" (quoted '\"')
     as <- opt $ some (attr)
-    pure (tag, record {nspace = ns} qn, fromMaybe Nil as)
+    pure (tag, setNameSpace ns qn, fromMaybe Nil as)
   <?> "Start Tag"
 
 elemEnd : String -> Parser ()
@@ -51,7 +51,7 @@ elemEnd s = angles (token "/" *!> token s) <?> "End Tag"
 comment : Parser $ Document COMMENT
 comment = token ("<!--") >! do
     cs <- map pack $ manyTill (anyChar) (spaces *> token "-->")
-    pure $ Comment cs
+    pure $ mkComment cs
   <?> "Comment"
 
 instruction : Parser $ Document INSTRUCTION
@@ -59,48 +59,56 @@ instruction = token "<?" >! do
     itarget <- word <* spaces
     idata  <- some $ genKVPair (word <* spaces) (dquote url)
     token "?>"
-    pure $ Instruction itarget idata
+    pure $ mkInstruction itarget idata
   <?> "Instruction"
 
 text : Parser $ (Document TEXT)
 text = do
     txt <- some (xmlWord <* spaces)
-    pure $ Text $ unwords txt
+    pure $ mkText( unwords txt)
   <?> "Text Node"
 
 cdata : Parser $ (Document CDATA)
 cdata = do
     token "<![CDATA[" >! do
       txt <- manyTill (anyChar) (token "]]>")
-      pure $ CData $ pack txt
+      pure $ mkCData $ pack txt
   <?> "CData"
 
 empty : Parser $ (Document ELEMENT)
 empty = do
     (_, qn, as) <- elemStart <* spaces
     token "/>" >! do
-      pure $ Element qn as Nil
+      pure $ mkElement qn as Nil
   <?> "Empty Node"
+
+private
+buildNodeList : List (ty ** prf : ValidNode ty ** Document ty) -> (ts ** prfs ** NodeList ts prfs)
+buildNodeList [] = ([] ** [] ** [])
+buildNodeList ((ty ** prf ** node) :: xs) =
+    let (ts ** prfs ** nodes) = buildNodeList xs
+     in (ty :: ts ** prf :: prfs ** node :: nodes)
 
 mutual
 
   export
-  nodes : Parser $ Document NODE
-  nodes = map (\n => Node n) comment
-      <|> map (\n => Node n) cdata
-      <|> map (\n => Node n) instruction
-      <|> map (\n => Node n) empty
-      <|> map (\n => Node n) element
-      <|> map (\n => Node n) text
-      <?> "Nodes"
+  node : Parser $ (ty ** prf : ValidNode ty ** Document ty)
+  node = map (\n => (COMMENT     ** ValidDoc   ** n)) comment
+     <|> map (\n => (CDATA       ** ValidCData ** n)) cdata
+     <|> map (\n => (INSTRUCTION ** ValidInstr ** n)) instruction
+     <|> map (\n => (ELEMENT     ** ValidElem  ** n)) empty
+     <|> map (\n => (ELEMENT     ** ValidElem  ** n)) element
+     <|> map (\n => (TEXT        ** ValidText  ** n)) text
+     <?> "Nodes"
 
   element : Parser $ Document ELEMENT
   element = do
       (n, qn, as) <- elemStart <* spaces
       token ">" *!> do
-        ns <- some nodes
+        ns <- some node
         elemEnd $ trim n
-        pure $ Element qn as ns
+        let (_ ** _ ** nodes) = buildNodeList ns
+        pure $ mkElement qn as nodes
      <?> "Element"
 
 isStandalone : Parser Bool
@@ -112,47 +120,47 @@ notStandalone = (expValue "no" *> pure False)
            <|> (expValue "false" *> pure False) <?> "Expected not Standalone"
 
 export
-xmlinfo : Parser XMLInfo
+xmlinfo : Parser $ Document INFO
 xmlinfo = token "<?xml" *!> do
     vers <- keyvalue' "version" $ quoted '\"' <* spaces
     enc  <- opt $ keyvalue' "encoding" $ quoted '\"' <* spaces
     alone <- opt $ keyvalue' "standalone" standalone <* spaces
     token "?>"
-    pure $ MkXMLInfo vers (fromMaybe "UTF-8" enc) (fromMaybe True alone)
+    pure $ mkXMLInfo vers (fromMaybe "UTF-8" enc) (fromMaybe True alone)
    <?> "XML Info"
   where
     standalone : Parser Bool
     standalone = isStandalone <|> notStandalone <?> "Standalone"
 
-pubident : Parser ExternalID
+pubident : Parser $ Document IDENT
 pubident = do
     token "PUBLIC" >! do
       loc  <- quoted '\"' <* spaces
       loc' <- quoted '\"' <* spaces
-      pure $ PublicID loc loc'
+      pure $ mkPublicID loc loc'
   <?> "Public identifer"
 
-sysident : Parser ExternalID
+sysident : Parser $ Document IDENT
 sysident = do
     token "SYSTEM" >! do
       loc <- quoted '\"' <* spaces
-      pure $ SystemID loc
+      pure $ mkSystemID loc
   <?> "System Identifier"
 
-ident : Parser ExternalID
+ident : Parser $ Document IDENT
 ident = pubident <|> sysident <?> "Identifiers"
 
 ||| Parse Doctypes
 export
-doctype : Parser DocType
+doctype : Parser $ Document DOCTYPE
 doctype = angles body <?> "DocType"
   where
-    body : Parser $ DocType
+    body : Parser $ Document DOCTYPE
     body = do
         token "!DOCTYPE" >! do
           v <- word <* spaces
           id <- opt ident <* spaces
-          pure $ MkDocType v id
+          pure $ mkDocType v id
       <?> "DocType Body"
 
 export
@@ -167,6 +175,6 @@ parseXMLDoc = do
     is    <- many instruction <* spaces
     doc   <- opt comment <* spaces
     root  <- element -- Add check if docttype exists for name of root element
-    pure $ MkDocument info dtype is doc root
+    pure $ mkDocument info dtype is doc root
   <?> "XML DOcument"
 -- --------------------------------------------------------------------- [ EOF ]
