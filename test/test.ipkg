@@ -1,6 +1,6 @@
 package test
 
-opts = "-p lightyear -p effects -p xml"
+opts = "-p lightyear -p effects --sourcepath ../ --i ../"
 
 modules = Main, TestRunner, ParsingTest, WellFormed, NotWellFormed
 

@@ -186,7 +186,7 @@ displayDoc (MkDocument info doctype instructions comment root) =
     unwords ["[MkDocument"
             , displayDoc info
             , maybe "" displayDoc doctype
-            , unwords $ map displayDoc instructions
+            , unwords $ Functor.map displayDoc instructions
             , maybe "" displayDoc comment
             , displayDoc root
             ,"]"
@@ -217,15 +217,15 @@ displayDoc (QName name nspace nprefix) =
 displayDoc (Element qName attributes Nil) =
          concat [ "<"
                 , displayDoc qName
-                , unwords $ map (\(k,v) => concat [displayDoc k, "=", show v]) attributes
+                , unwords $ Functor.map (\(k,v) => concat [displayDoc k, "=", show v]) attributes
                 , "/>"
                 ]
 
 displayDoc (Element qName attributes children) =
          concat ["[Element "
                 , "<", displayDoc qName, ">"
-                , unwords $ map (\(k,v) => concat [displayDoc k, "=", show v]) attributes
-                , concat $ mapPList displayDoc children
+                , unwords $ Functor.map (\(k,v) => concat [displayDoc k, "=", show v]) attributes
+                , concat $ map displayDoc children
                 ,"</", displayDoc qName, ">"
                 ]
 
@@ -257,6 +257,9 @@ NodeList = PList NodeTy Document ValidNode
 
 setRoot : Document ELEMENT -> Document DOCUMENT -> Document DOCUMENT
 setRoot newe (MkDocument info dtype ins doc e) = MkDocument info dtype ins doc newe
+
+getRoot : Document DOCUMENT -> Document ELEMENT
+getRoot (MkDocument info doctype instructions comment root) = root
 
 mkXMLInfo : String -> String -> Bool -> Document INFO
 mkXMLInfo = XMLInfo
@@ -464,7 +467,8 @@ getNodeValue x {prf = ValidElem} = Nothing
 getNodeValue (CData x) {prf = ValidCData} = Just x
 getNodeValue (Text x) {prf = ValidText} = Just x
 getNodeValue (Comment x) {prf = ValidDoc} = Just x
-getNodeValue (Instruction x xs) {prf = ValidInstr} = Just $ unwords $ map show xs
+getNodeValue (Instruction x xs) {prf = ValidInstr} =
+  Just $ unwords $ Functor.map show xs
 
 getTag : Document ELEMENT -> Document QNAME
 getTag (Element n _ _) = n

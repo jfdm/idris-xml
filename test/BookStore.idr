@@ -4,7 +4,7 @@ import XML.DOM
 import XML.XPath
 
 bstore : Document DOCUMENT
-bstore = setRoot root $ mkDocument (mkQName "bookstore") Nothing
+bstore = mkSimpleDocument root
   where
     rogElem : Document ELEMENT
     rogElem = "isbn" <+=> "123"
@@ -27,7 +27,7 @@ bstore = setRoot root $ mkDocument (mkQName "bookstore") Nothing
 
 
 people : Document DOCUMENT
-people = setRoot root $ mkDocument (mkQName "people") Nothing
+people = mkSimpleDocument root
   where
     p1 : Document ELEMENT
     p1 = mkElementPrefix "person" "pre" <=> "Michael"
@@ -49,7 +49,7 @@ mkBook n a d f l p = mkSimpleElement "book"
 
 ||| http://en.wikibooks.org/wiki/XQuery/XPath_examples
 books : Document DOCUMENT
-books = setRoot root $ mkDocument (mkQName "books") Nothing
+books = mkSimpleDocument root
   where
     desc : Document ELEMENT
     desc = "desc" <+=> "A list of books useful for people first learning how to build web XML web applications."
@@ -92,3 +92,10 @@ books = setRoot root $ mkDocument (mkQName "books") Nothing
         <++> book2
         <++> book3
         <++> book4
+
+
+myQuery : XPath ELEMENT QUERY
+myQuery =  Query $
+           (Root (Elem "bookstore"))
+       </> ((Elem "book")
+       </> (Elem "title"))
