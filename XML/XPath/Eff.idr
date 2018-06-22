@@ -17,8 +17,9 @@ export
 queryE : String
       -> Document ty
       -> {auto prf : CanQuery ty}
-      -> Eff (Either XPathError (List XMLNode)) xs
-queryE qstr doc = pure $ query qstr doc
+      -> Eff (Either XPathError (ty' ** XPathResult ty')) xs
+queryE qstr doc {ty=ELEMENT} = pure (queryElem qstr doc)
+queryE qstr doc {ty=DOCUMENT} = pure (queryDoc qstr doc)
 
 
 -- --------------------------------------------------------------------- [ EOF ]

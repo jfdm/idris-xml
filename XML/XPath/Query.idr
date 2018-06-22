@@ -20,7 +20,7 @@ getNodes : (convErr : XPathError -> a)
         -> (qstr : String)
         -> (node : Document ty)
         -> {auto prf : CanQuery ty}
-        -> Either a (List XMLNode)
+        -> Either a (ty' ** XPathResult ty')
 getNodes convErr qstr doc =
   case query qstr doc of
     Left err  => Left $ convErr err
@@ -35,12 +35,12 @@ getNode : (convErr : XPathError -> a)
        -> (qstr : String)
        -> (node : Document ty)
        -> {auto prf : CanQuery ty}
-       -> Either a XMLNode
+       -> Either a (ty' ** Document ty')
 getNode convErr qstr doc = do
-  res <- getNodes convErr qstr doc
+  (_ ** res) <- getNodes convErr qstr doc
   case res of -- QueryError qstr loc msg
-    Nil    => Left (convErr $ SingletonError qstr)
-    (x::_) => Right x
+    Empty    => Left (convErr $ SingletonError qstr)
+    (Nodes _ (x::_)) => Right (_ ** x)
 
 
 ||| Use XPath to find nodes satisfying some query get the text or
@@ -50,15 +50,20 @@ getNode convErr qstr doc = do
 ||| @convErr Convert XPathError to a local error type.
 ||| @qstr    The query to run.
 ||| @node    The thing we are querying.
-getNodeValues : (test : XPath TEST)
+getNodeValues : (test : XPath ty' (TEST b))
              -> (convErr : XPathError -> a)
              -> (qstr : String)
              -> (node  : Document ty)
+             -> {auto prfB : ValidNode ty}
              -> {auto prf : CanQuery ty}
              -> Either a (List String)
 getNodeValues test convErr qstr doc = do
-    res <- getNodes convErr (concat [qstr, "/", show test]) doc
-    pure $ mapMaybe getNodeValue res
+    (_ ** res) <- getNodes convErr (concat [qstr, "/", show test]) doc
+    case res of
+      Empty => pure Nil
+      (Nodes prf xs) => do
+        let vals = mapMaybe (\x => getNodeValue {prf=prf} x) xs
+        pure vals
 
 ||| Use XPath to find the first node that satisfies some query get the
 ||| text or cdata inside or a specific attribute.
@@ -67,10 +72,11 @@ getNodeValues test convErr qstr doc = do
 ||| @convErr Convert XPathError to a local error type.
 ||| @qstr    The query to run.
 ||| @node    The thing we are querying.
-getNodeValue : (test : XPath TEST)
+getNodeValue : (test : XPath ty' (TEST b))
             -> (convErr : XPathError -> a)
             -> (qstr : String)
             -> (node : Document ty)
+            -> {auto prfV : ValidNode ty}
             -> {auto prf : CanQuery ty}
             -> Either a String
 getNodeValue test convErr qstr doc = do
@@ -90,6 +96,7 @@ getNamedAttrs : (name : String)
              -> (convErr : XPathError -> a)
              -> (qstr : String)
              -> (node : Document ty)
+             -> {auto prfV : ValidNode ty}
              -> {auto prf : CanQuery ty}
              -> Either a (List String)
 getNamedAttrs name convErr qstr doc = getNodeValues (Attr name) convErr qstr doc
@@ -105,6 +112,7 @@ getNamedAttr : (name : String)
             -> (convErr : XPathError -> a)
             -> (qstr : String)
             -> (node : Document ty)
+            -> {auto prfV : ValidNode ty}
             -> {auto prf : CanQuery ty}
             -> Either a String
 getNamedAttr name convErr qstr doc = getNodeValue (Attr name) convErr qstr doc
@@ -118,6 +126,7 @@ getNamedAttr name convErr qstr doc = getNodeValue (Attr name) convErr qstr doc
 getTextNodes : (convErr : XPathError -> a)
             -> (qstr : String)
             -> (node : Document ty)
+            -> {auto prfV : ValidNode ty}
             -> {auto prf : CanQuery ty}
             -> Either a (List String)
 getTextNodes convErr qstr doc = getNodeValues Text convErr qstr doc
@@ -131,6 +140,7 @@ getTextNodes convErr qstr doc = getNodeValues Text convErr qstr doc
 getTextNode : (convErr : XPathError -> a)
            -> (qstr : String)
            -> (node : Document ty)
+            -> {auto prfV : ValidNode ty}
            -> {auto prf : CanQuery ty}
            -> Either a String
 getTextNode convErr qstr doc = getNodeValue Text convErr qstr doc
@@ -145,6 +155,7 @@ getCDataNodes : (convErr : XPathError -> a)
              -> (qstr : String)
              -> (node : Document ty)
              -> {auto prf : CanQuery ty}
+            -> {auto prfV : ValidNode ty}
              -> Either a (List String)
 getCDataNodes convErr qstr doc = getNodeValues CData convErr qstr doc
 
@@ -157,6 +168,7 @@ getCDataNodes convErr qstr doc = getNodeValues CData convErr qstr doc
 getCDataNode : (convErr : XPathError -> a)
             -> (qstr : String)
             -> (node : Document ty)
+            -> {auto prfV : ValidNode ty}
             -> {auto prf : CanQuery ty}
             -> Either a String
 getCDataNode convErr qstr doc = getNodeValue CData convErr qstr doc
