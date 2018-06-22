@@ -3,7 +3,7 @@
 -- Copyright   : (c) Jan de Muijnck-Hughes
 -- License     : see LICENSE
 -- --------------------------------------------------------------------- [ EOH ]
-module XML.Reader.Eff
+module XML.Serialise.Eff
 
 import Lightyear
 import Lightyear.Strings
@@ -15,7 +15,7 @@ import Effect.Exception
 
 import XML.DOM
 import XML.Parser
-import XML.Reader
+import XML.Serialise
 
 %access private
 

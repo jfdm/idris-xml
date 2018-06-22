@@ -3,7 +3,7 @@
 -- Copyright   : (c) Jan de Muijnck-Hughes
 -- License     : see LICENSE
 -- --------------------------------------------------------------------- [ EOH ]
-module XML.Reader
+module XML.Serialise
 
 import Lightyear
 import Lightyear.Strings

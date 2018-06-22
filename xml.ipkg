@@ -19,8 +19,8 @@ pkgs = effects
 modules = XML.DOM.Eff
         , XML.DOM
 
-        , XML.Reader
-        , XML.Reader.Eff
+        , XML.Serialise
+        , XML.Serialise.Eff
 
         , XML.ParseUtils
         , XML.Parser
