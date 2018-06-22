@@ -45,12 +45,6 @@ namespace Doc
       Left err  => Left $ ParseError err
       Right res => pure $ res
 
-export
-readXMLDoc : String
-           -> Eff (Either XMLError (Document DOCUMENT))
-                  [FILE ()]
-readXMLDoc f = parseFile CannotReadFile FileParseError parseXMLDoc f
-
 namespace Snippet
   export
   fromString : String -> Either XMLError (Document ELEMENT)
@@ -59,11 +53,6 @@ namespace Snippet
       Left err  => Left $ ParseError err
       Right res => pure $ res
 
-export
-readXMLSnippet : String
-              -> Eff (Either XMLError (Document ELEMENT))
-                     [FILE ()]
-readXMLSnippet f = parseFile CannotReadFile FileParseError parseXMLSnippet f
 
 interface XMLReader a where
   fromSnippet : XMLElem -> Either XMLError a
