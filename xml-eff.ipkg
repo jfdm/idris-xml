@@ -1,0 +1,20 @@
+package xml-eff
+
+author     = Jan de Muijnck-Hughes
+maintainer = Jan de Muijnck-Hughes
+license    = BSD3 but see LICENSE for more information
+brief      = "XML & Effects in Idris"
+readme     = README.md
+version    = 0.1
+
+
+pkgs = effects
+     , lightyear
+
+     , containers
+     , commons
+     , xml
+
+modules = XML.DOM.Eff
+        , XML.Serialise.Eff
+        , XML.XPath.Eff

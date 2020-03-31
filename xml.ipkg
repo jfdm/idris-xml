@@ -10,17 +10,14 @@ sourceloc  = git://git@github.com:jfdm/idris-xml.git
 bugtracker = http://www.github.com/jfdm/idris-xml/issues
 
 
-pkgs = effects
-     , lightyear
+pkgs = lightyear
 
      , containers
      , commons
 
-modules = XML.DOM.Eff
-        , XML.DOM
+modules = XML.DOM
 
         , XML.Serialise
-        , XML.Serialise.Eff
 
         , XML.ParseUtils
         , XML.Parser
@@ -29,10 +26,3 @@ modules = XML.DOM.Eff
         , XML.XPath.Parser
         , XML.XPath.Types
         , XML.XPath.Query
-        , XML.XPath.Eff
-
-        , XML.Test.WellFormed
-        , XML.Test.NotWellFormed
-
-tests = XML.Test.WellFormed.runTests
-      , XML.Test.NotWellFormed.runTests

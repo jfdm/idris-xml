@@ -9,10 +9,6 @@ import Lightyear
 import Lightyear.Strings
 import Lightyear.StringFile
 
-import Effects
-import Effect.File
-import Effect.Exception
-
 import XML.DOM
 import XML.Parser
 

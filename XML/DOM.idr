@@ -9,7 +9,7 @@ module XML.DOM
 
 import public Data.DList
 import public Data.PList
-import public Data.Display
+import public Commons.Text.Display
 
 %access export
 %default total

@@ -8,7 +8,7 @@ OPTS  :=
 
 install: lib
 	${IDRIS} ${OPTS} --install ${LIB}.ipkg
-
+	${IDRIS} ${OPTS} --install ${LIB}-eff.ipkg
 lib:
 	${IDRIS} ${OPTS} --build ${LIB}.ipkg
 
@@ -23,7 +23,7 @@ check: clobber
 	${IDRIS} --checkpkg ${LIB}.ipkg
 
 test:
-	${IDRIS} --testpkg ${LIB}.ipkg
+	${IDRIS} --testpkg ${LIB}-test.ipkg
 
 doc:
 	${IDRIS} --mkdoc ${LIB}.ipkg
