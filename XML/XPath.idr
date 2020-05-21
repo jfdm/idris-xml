@@ -106,17 +106,13 @@ query q x {prf} with (prf)
 
 -- ------------------------------------------------------------------ [ Parser ]
 
-private
-doParse : String -> Either String (ty ** XPath ty QUERY)
-doParse = Strings.parse parseQuery
-
 namespace String
   export
   queryDoc : String
           -> Document DOCUMENT
           -> Either XPathError (ty ** XPathResult ty)
   queryDoc qstr doc =
-    case (doParse qstr) of
+    case (parseXPathStr qstr) of
       Left err        => Left $ MalformedQuery qstr err
       Right (_ ** q)  => Right $ (_ ** queryDoc q doc)
 
@@ -125,7 +121,7 @@ namespace String
            -> Document ELEMENT
            -> Either XPathError (ty ** XPathResult ty)
   queryElem qstr e = do
-    case (doParse qstr) of
+    case (parseXPathStr qstr) of
       Left err        => Left $ MalformedQuery qstr err
       Right (_ ** q)  => Right $ (_ ** queryElem q e)
 

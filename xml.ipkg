@@ -21,7 +21,7 @@ modules = XML.DOM
 
         , XML.Serialise
 
---        , XML.XPath
---        , XML.XPath.Parser
---        , XML.XPath.Types
---        , XML.XPath.Query
+        , XML.XPath
+        , XML.XPath.Parser
+        , XML.XPath.Types
+        , XML.XPath.Query

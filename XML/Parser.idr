@@ -72,6 +72,7 @@ entity = terminalF "Expected entity"
                    (\x => case tok x of
                             (Entity s) => Just s
                             _          => Nothing)
+
 symbol : Parser String
 symbol = terminalF "Expected symbol"
                  (\x => case tok x of

@@ -7,10 +7,42 @@
 -- --------------------------------------------------------------------- [ EOH ]
 module XML.XPath.Types
 
+import public Commons.Data.Location
+import public Commons.Text.Lexer.Run
+import public Commons.Text.Parser.Support
+import public Commons.Text.Parser.Run
+
 import XML.DOM
 
 %default total
 %access public export
+
+public export
+data Token = ReservedNode String
+           | UserNode String
+           | Symbol String
+           | WS String
+           | NotRecog String
+           | EndInput
+
+public export
+Eq Token where
+  (==) (ReservedNode x) (ReservedNode y) = x == y
+  (==) (UserNode x) (UserNode y) = x == y
+  (==) (Symbol x) (Symbol y) = x == y
+  (==) (NotRecog x) (NotRecog y) = x == y
+  (==) EndInput EndInput = True
+  (==) _ _ = False
+
+public export
+Show Token where
+  show (ReservedNode s) = "(ReservedNode " ++ s ++ ")"
+  show (UserNode s) = "(UserNode " ++ s ++ ")"
+  show (Symbol s) = "(Symbol " ++ s ++ ")"
+  show (WS s) = "(WS " ++ s ++ ")"
+  show (NotRecog s) = "(NotRecog " ++ s ++ ")"
+  show (EndInput) = "EndInput"
+
 
 data XPathTy = NODE | PATH | QUERY | ROOT | TEST Bool
 
@@ -83,7 +115,7 @@ Show (XPath ty x) where
 -- ------------------------------------------------------------------- [ ERROR ]
 
 data XPathError : Type where
-  MalformedQuery : (qstr : String) -> (msg : String) -> XPathError
+  MalformedQuery : (qstr : String) -> Run.ParseError Token -> XPathError
   QueryError     : (qstr : XPath ty a) -> (loc : XMLElem) -> (msg : Maybe String) -> XPathError
   SingletonError : String -> XPathError
   GenericError   : String -> XPathError
@@ -93,7 +125,12 @@ Show XPathError where
     [ "Query:"
     , show q
     , "is malformed because"
-    , err]
+    , case err of
+               (FError e) => show e
+               (PError e) => unlines [maybe "" show (location e), error e]
+               (LError (MkLexFail l i)) => unlines [show l, show i]
+    ]
+
 
   show (QueryError qstr loc msg) = unlines
     [ unwords ["QueryError:", fromMaybe "" msg]
