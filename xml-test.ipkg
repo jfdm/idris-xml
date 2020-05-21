@@ -9,8 +9,7 @@ version    = 0.1
 
 
 pkgs = effects
-     , lightyear
-
+     , contrib
      , containers
      , commons
 

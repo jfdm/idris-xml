@@ -10,19 +10,18 @@ sourceloc  = git://git@github.com:jfdm/idris-xml.git
 bugtracker = http://www.github.com/jfdm/idris-xml/issues
 
 
-pkgs = lightyear
-
+pkgs = contrib
      , containers
      , commons
 
 modules = XML.DOM
 
-        , XML.Serialise
-
-        , XML.ParseUtils
+        , XML.Lexer
         , XML.Parser
 
-        , XML.XPath
-        , XML.XPath.Parser
-        , XML.XPath.Types
-        , XML.XPath.Query
+        , XML.Serialise
+
+--        , XML.XPath
+--        , XML.XPath.Parser
+--        , XML.XPath.Types
+--        , XML.XPath.Query

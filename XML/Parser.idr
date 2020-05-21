@@ -7,91 +7,211 @@
 -- --------------------------------------------------------------------- [ EOH ]
 module XML.Parser
 
-import public Lightyear
-import public Lightyear.Char
-import public Lightyear.Strings
+import public Text.Lexer
+import public Text.Parser
 
+import public Commons.Text.Lexer.Run
+import public Commons.Text.Parser.Support
+import public Commons.Text.Parser.Run
+
+import XML.Lexer
 import XML.DOM
-import XML.ParseUtils
 
 %access private
+%default total
+
+-- --------------------------------------------------------------- [ Utilities ]
+
+public export
+Parser : (a : Type) -> Type
+Parser = Rule Token
+
+ParserE : (a : Type) -> Type
+ParserE = RuleEmpty Token
+
+eoi : RuleEmpty Token ()
+eoi = eoi isEOI
+
+  where
+    isEOI : Token -> Bool
+    isEOI EndInput = True
+    isEOI _ = False
+
+struct : String -> Parser ()
+struct str =
+  match ("Expected Symbol '" ++ str ++ "'")
+        ()
+        (Struct str)
+
+isWord : String -> Parser ()
+isWord str =
+  match ("Expected Symbol '" ++ str ++ "'")
+        ()
+        (Word str)
+
+isText : String -> Parser ()
+isText str =
+  match ("Expected Text '" ++ str ++ "'")
+        ()
+        (Text str)
+
+isLit : String -> Parser ()
+isLit str =
+  match ("Expected Lit '" ++ str ++ "'")
+        ()
+        (StringLit ("\"" ++ str ++ "\""))
+
+isSymbol : String -> Parser ()
+isSymbol str =
+  match ("Expected Symbol '" ++ str ++ "'")
+        ()
+        (Symbol str)
+
+entity : Parser String
+entity = terminalF "Expected entity"
+                   (\x => case tok x of
+                            (Entity s) => Just s
+                            _          => Nothing)
+symbol : Parser String
+symbol = terminalF "Expected symbol"
+                 (\x => case tok x of
+                          (Symbol s) => Just s
+                          _          => Nothing)
+
+word : Parser String
+word = terminalF "Expected word"
+                 (\x => case tok x of
+                          (Word s) => Just s
+                          _        => Nothing)
+
+textStr : Parser String
+textStr = terminalF "Expected text"
+                 (\x => case tok x of
+                          (Text s) => Just s
+                          _        => Nothing)
+
+commentStr : Parser String
+commentStr = terminalF "Expected comment"
+                    (\x => case tok x of
+                            (Comment s) => Just s
+                            _           => Nothing)
+
+cdataStr : Parser String
+cdataStr = terminalF "Expected doc"
+                  (\x => case tok x of
+                           (CData s) =>
+                             let s'  = substr 9 (length s) s in
+                             let s'' = substr 3 (length s') (reverse s')
+                             in Just (reverse s'')
+
+                           _         => Nothing)
+
+strLit : Parser String
+strLit = terminalF "Expected string literal"
+             (\x => case tok x of
+                         StringLit s => Just (fst $ span (not . (==) '"') s)
+                         _ => Nothing)
+
+kvpair : Parser a -> Parser b -> Parser (a, b)
+kvpair key value = do
+    k <- key
+    isSymbol "="
+    v <- value
+    pure (k,v)
+
+kvpair' : String -> Parser b -> Parser b
+kvpair' key value = do
+    isWord key
+    isSymbol "="
+    v <- value
+    pure v
+
+angles : Parser a -> Parser a
+angles = between (struct "<") (struct ">")
 
 -- ------------------------------------------------------------------- [ Utils ]
-qname : Parser (String, Document QNAME)
+
+
+qname : Parser $ Document QNAME
 qname = do
-    pre <- opt $ (word <* colon)
+    pre <- optional $ (word <* isSymbol ":")
     name <- word
-    spaces
-    let pr = case pre of
-        Just p => p ++ ":"
-        Nothing => ""
-    let tag = pr ++ name
-    pure (tag, mkQName name Nothing pre)
+    pure (mkQName name Nothing pre)
 
-attr : Parser $ (Document QNAME, String)
+
+attr : Parser (Document QNAME, String)
 attr = do
-    ((_,qn),v) <- genKVPair (qname) (quoted '\"')
-    spaces
-    pure (qn, v)
-  <?> "Node Attributes"
+  res <- kvpair qname strLit
+  pure (fst res, snd res)
 
-elemStart : Parser (String, Document QNAME, (List (Document QNAME, String)))
+elemStart : Parser (Document QNAME, Document QNAME, (List (Document QNAME, String)))
 elemStart = do
-    token "<"
-    (tag, qn) <- qname
-    ns <- opt $ keyvalue' "xmlns" (quoted '\"')
-    as <- opt $ some (attr)
-    pure (tag, setNameSpace ns qn, fromMaybe Nil as)
-  <?> "Start Tag"
+  struct "<"
+  qn <- qname
+  ns <- optional $ kvpair' "xmlns" strLit
+  as <- optional $ some attr
+  pure (qn, setNameSpace ns qn, fromMaybe Nil as)
 
-elemEnd : String -> Parser ()
-elemEnd s = angles (token "/" *!> token s) <?> "End Tag"
+elemEnd : Document QNAME -> Parser ()
+elemEnd n = angles (struct "/" *> isValid)
+  where
+    isValid : Parser ()
+    isValid = do
+       seen <- qname
+       if (assert_total $ eqDoc n seen)
+         then pure ()
+         else fail "Malformed"
 
 -- ------------------------------------------------------------------- [ Nodes ]
+
+export
 comment : Parser $ Document COMMENT
-comment = token ("<!--") >! do
-    cs <- map pack $ manyTill (anyChar) (spaces *> token "-->")
-    pure $ mkComment cs
-  <?> "Comment"
+comment = map mkComment commentStr
 
+export
+cdata : Parser (Document CDATA)
+cdata = map mkCData cdataStr
+
+text : Parser (Document TEXT)
+text = map (\xs => mkText (concat xs)) $ some text'
+   where
+     text' : Parser String
+     text' =  entity
+          <|> symbol
+          <|> word
+          <|> textStr
+
+export
 instruction : Parser $ Document INSTRUCTION
-instruction = token "<?" >! do
-    itarget <- word <* spaces
-    idata  <- some $ genKVPair (word <* spaces) (dquote url)
-    token "?>"
-    pure $ mkInstruction itarget idata
-  <?> "Instruction"
+instruction = do
+  struct "<"
+  isSymbol "?"
+  t <- word
+  d <- some (kvpair word strLit) -- @TODO make proper URL parser
+  isSymbol "?"
+  struct ">"
+  pure (mkInstruction t d)
 
-text : Parser $ (Document TEXT)
-text = do
-    txt <- some (xmlWord <* spaces)
-    pure $ mkText( unwords txt)
-  <?> "Text Node"
-
-cdata : Parser $ (Document CDATA)
-cdata = do
-    token "<![CDATA[" >! do
-      txt <- manyTill (anyChar) (token "]]>")
-      pure $ mkCData $ pack txt
-  <?> "CData"
-
-empty : Parser $ (Document ELEMENT)
+export
+empty : Parser (Document ELEMENT)
 empty = do
-    (_, qn, as) <- elemStart <* spaces
-    token "/>" >! do
-      pure $ mkElement qn as Nil
-  <?> "Empty Node"
+  start <- elemStart
+  struct "/"
+  struct ">"
+  pure (mkElement (fst $ snd start) (snd $ snd start) Nil)
 
 private
-buildNodeList : List (ty ** prf : ValidNode ty ** Document ty) -> (ts ** prfs ** NodeList ts prfs)
+buildNodeList : List (ty ** prf : ValidNode ty ** Document ty)
+             -> (ts ** prfs ** NodeList ts prfs)
 buildNodeList [] = ([] ** [] ** [])
 buildNodeList ((ty ** prf ** node) :: xs) =
     let (ts ** prfs ** nodes) = buildNodeList xs
      in (ty :: ts ** prf :: prfs ** node :: nodes)
 
+
 mutual
 
-  export
+  export covering
   node : Parser $ (ty ** prf : ValidNode ty ** Document ty)
   node = map (\n => (COMMENT     ** ValidDoc   ** n)) comment
      <|> map (\n => (CDATA       ** ValidCData ** n)) cdata
@@ -99,82 +219,91 @@ mutual
      <|> map (\n => (ELEMENT     ** ValidElem  ** n)) empty
      <|> map (\n => (ELEMENT     ** ValidElem  ** n)) element
      <|> map (\n => (TEXT        ** ValidText  ** n)) text
-     <?> "Nodes"
 
-  element : Parser $ Document ELEMENT
+  covering
+  element : Parser (Document ELEMENT)
   element = do
-      (n, qn, as) <- elemStart <* spaces
-      token ">" *!> do
-        ns <- some node
-        elemEnd $ trim n
-        let (_ ** _ ** nodes) = buildNodeList ns
-        pure $ mkElement qn as nodes
-     <?> "Element"
+    start <- elemStart
+    let qn = (fst $ snd start)
+    let as = (snd $ snd start)
+    struct ">"
+    ns <- many node
+    elemEnd (fst start)
+    let nodes = buildNodeList ns
+    pure (mkElement qn as (snd $ snd nodes))
+
+%default covering
 
 isStandalone : Parser Bool
-isStandalone = (expValue "yes" *> pure True)
-           <|> (expValue "true" *> pure True) <?> "Expected Standalone"
+isStandalone = (isLit "yes" <|> isLit "true") *> pure True
 
 notStandalone : Parser Bool
-notStandalone = (expValue "no" *> pure False)
-           <|> (expValue "false" *> pure False) <?> "Expected not Standalone"
+notStandalone = (isLit "false" <|> isLit "no") *> pure False
 
 export
-xmlinfo : Parser $ Document INFO
-xmlinfo = token "<?xml" *!> do
-    vers <- keyvalue' "version" $ quoted '\"' <* spaces
-    enc  <- opt $ keyvalue' "encoding" $ quoted '\"' <* spaces
-    alone <- opt $ keyvalue' "standalone" standalone <* spaces
-    token "?>"
-    pure $ mkXMLInfo vers (fromMaybe "UTF-8" enc) (fromMaybe True alone)
-   <?> "XML Info"
-  where
-    standalone : Parser Bool
-    standalone = isStandalone <|> notStandalone <?> "Standalone"
+xmlinfo : Parser (Document INFO)
+xmlinfo = do
+  struct "<"
+  isSymbol "?"
+  isWord "xml"
+  vers  <- kvpair' "version" strLit
+  enc   <- option "UTF-8" $ kvpair' ("encoding")   strLit
+  alone <- option True    $ kvpair' ("standalone") (isStandalone <|> notStandalone)
+  isSymbol "?"
+  struct ">"
+  pure (mkXMLInfo vers enc alone)
 
-pubident : Parser $ Document IDENT
+pubident : Parser (Document IDENT)
 pubident = do
-    token "PUBLIC" >! do
-      loc  <- quoted '\"' <* spaces
-      loc' <- quoted '\"' <* spaces
-      pure $ mkPublicID loc loc'
-  <?> "Public identifer"
+  isWord "PUBLIC"
+  loc <- strLit
+  loc' <- strLit
+  pure (mkPublicID loc loc')
 
-sysident : Parser $ Document IDENT
-sysident = do
-    token "SYSTEM" >! do
-      loc <- quoted '\"' <* spaces
-      pure $ mkSystemID loc
-  <?> "System Identifier"
+sysident : Parser (Document IDENT)
+sysident = map mkSystemID (isWord "SYSTEM" *> strLit)
 
 ident : Parser $ Document IDENT
-ident = pubident <|> sysident <?> "Identifiers"
-
-||| Parse Doctypes
-export
-doctype : Parser $ Document DOCTYPE
-doctype = angles body <?> "DocType"
-  where
-    body : Parser $ Document DOCTYPE
-    body = do
-        token "!DOCTYPE" >! do
-          v <- word <* spaces
-          id <- opt ident <* spaces
-          pure $ mkDocType v id
-      <?> "DocType Body"
+ident = pubident <|> sysident
 
 export
-parseXMLSnippet : Parser $ Document ELEMENT
-parseXMLSnippet = element <?> "XML Element"
+doctype : Parser (Document DOCTYPE)
+doctype = do
+  struct "<"
+  isSymbol "!"
+  isWord "DOCTYPE"
+  v <- word
+  id <- optional ident
+  struct ">"
+  pure (mkDocType v id)
+
+
+xmlSnippet : Parser $ Document ELEMENT
+xmlSnippet = (element <|> empty)
 
 export
-parseXMLDoc : Parser $ Document DOCUMENT
-parseXMLDoc = do
-    info  <- xmlinfo <* spaces
-    dtype <- opt doctype <* spaces
-    is    <- many instruction <* spaces
-    doc   <- opt comment <* spaces
+parseXMLSnippet : (str : String) -> Either (Run.ParseError Token) (Document ELEMENT)
+parseXMLSnippet = parseString XMLLexer xmlSnippet
+
+export
+xmldoc : Parser $ Document DOCUMENT
+xmldoc = do
+    info  <- xmlinfo
+    dtype <- optional doctype
+    is    <- many instruction
+    doc   <- optional comment
     root  <- element -- Add check if docttype exists for name of root element
     pure $ mkDocument info dtype is doc root
-  <?> "XML DOcument"
+
+export
+parseXMLDoc : (doc : String)
+           -> (Either (Run.ParseError Token) (Document DOCUMENT))
+parseXMLDoc = parseString XMLLexer xmldoc
+
+
+export
+parseXMLDocFile : (fname : String)
+               -> IO (Either (Run.ParseError Token) (Document DOCUMENT))
+parseXMLDocFile = parseFile XMLLexer xmldoc
+
 -- --------------------------------------------------------------------- [ EOF ]
