@@ -2,7 +2,7 @@ module XML.Lexer
 
 import Text.Lexer
 
-import Commons.Text.Lexer.Run
+import public Commons.Text.Lexer.Run
 
 %default total
 %access private

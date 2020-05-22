@@ -5,6 +5,8 @@ import Text.PrettyPrint.WL
 import Test.Unit.Display
 import Test.Unit
 
+import Commons.Text.Parser.Test
+
 import XML.DOM
 import XML.XPath
 
@@ -108,43 +110,6 @@ myQuery =  Query $
        </> ((Elem "book")
        </> (Elem "title"))
 
-genericTest' : (title : Maybe String)
-           -> Bool
-           -> (p : String -> Either (Run.ParseError Token) (ty ** XPath ty QUERY))
-           -> String
-           -> IO Bool
-genericTest' title chk p i = do
-  putStrLn $ unwords ["Test:" , fromMaybe "Unnamed Test" title]
-  case p i of
-    Left err => do
-      when (chk) $ do
-         let errMsg = vcat [
-               text errLine
-             , text "An error occured" <+> colon
-             , indent 2 $ case err of
-               (FError e) => text $ show e
-               (PError e) => text $ unlines [maybe "" show (location e), error e]
-               (LError (MkLexFail l i)) => text $ unlines [show l, show i]
-             , text errLine]
-         putStrLn $ Default.toString errMsg
-      if chk
-        then pure False
-        else pure True
-    Right _ => pure chk
-
-parseTestNot : String
-            -> (String -> Either ((Run.ParseError Token)) (ty ** XPath ty QUERY))
-            -> String
-            -> IO Bool
-parseTestNot title p i = genericTest' (Just title) False p i
-
-parseTest : String
-            -> (String -> Either ((Run.ParseError Token)) (ty ** XPath ty QUERY))
-            -> String
-            -> IO Bool
-parseTest title p i = genericTest' (Just title) True p i
-
-
 queryTest : String
          -> String
          -> Document DOCUMENT
@@ -176,8 +141,9 @@ runTests : IO ()
 runTests = do
   putStrLn $ "=> XPath"
 
-  runTests [ parseTest "Query 1" (parseXPathStr) "/root/@test"
-           , parseTest "Query 2" (parseXPathStr) "/root/text()"
-           , parseTest "Query 3" (parseXPathStr) "/bookstore/book/title"
-           , queryTest "Query 4" "/books/book/title" books True
-           ]
+  NonReporting.runTests
+      [ runParseTest showParseError $ parseTest "Query 1" (parseXPathStr) "/root/@test"
+      , runParseTest showParseError $ parseTest "Query 2" (parseXPathStr) "/root/text()"
+      , runParseTest showParseError $ parseTest "Query 3" (parseXPathStr) "/bookstore/book/title"
+      , queryTest "Query 4" "/books/book/title" books True
+      ]

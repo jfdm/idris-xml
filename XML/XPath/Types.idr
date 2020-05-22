@@ -120,15 +120,17 @@ data XPathError : Type where
   SingletonError : String -> XPathError
   GenericError   : String -> XPathError
 
+showParseError : Run.ParseError Token -> String
+showParseError (FError e) = show e
+showParseError (PError e) = unlines [maybe "" show (location e), error e]
+showParseError (LError (MkLexFail l i)) = unlines [show l, show i]
+
 Show XPathError where
   show (MalformedQuery q err) = unwords
     [ "Query:"
     , show q
     , "is malformed because"
-    , case err of
-               (FError e) => show e
-               (PError e) => unlines [maybe "" show (location e), error e]
-               (LError (MkLexFail l i)) => unlines [show l, show i]
+    , showParseError err
     ]
 
 
